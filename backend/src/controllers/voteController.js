@@ -1,13 +1,24 @@
+import { ethers } from 'ethers'
 import Vote from "../models/Vote.js";
 
 export const submitVote = async (req, res) => {
   try {
-    const { voteHash } = req.body;
+    const { voteHash, walletAddress, signature } = req.body;
 
-    if (!voteHash || typeof voteHash !== "string" || voteHash.length !== 64) {
-      return res.status(400).json({ error: "Invalid voteHash" });
+    if (!voteHash || !walletAddress || !signature) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+    
+    const message = `Vote:${voteHash}`
+
+    // recover signer
+    const recoveredAddress = ethers.verifyMessage(message, signature)
+
+    if(recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+      return res.status(401).json({error: "Invalid signature"})
     }
 
+    // duplocate vote check
     const existing = await Vote.findOne({ voteHash });
     if (existing) {
       return res.status(400).json({ error: "Duplicate vote detected" });

@@ -14,3 +14,12 @@ export const connectWallet = async () => {
 
   return address;
 };
+
+export const signMessage = async (message) => {
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+
+  const signature = await signer.signMessage(message);
+
+  return signature;
+};
