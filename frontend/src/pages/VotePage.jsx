@@ -1,15 +1,34 @@
 import React from "react";
-import crypto from "crypto-js";
+import axios from "axios";
+import { generateVoteHash } from "../utils/hash.js";
+import { submitVote } from "../services/voteService.js";
 
-const handleVote = async (candidate) => {
-  const hash = crypto.SHA256(candidate + Date.now()).toString();
-
-  await axios.post("http://localhost:3000/api/vote", {
-    voteHash: hash,
-  });
-};
 const VotePage = () => {
-  return <div>Vote Page</div>;
+  const handleVote = async (candidate) => {
+    try {
+      const walletAddress = "demo-wallet"; // temporary
+
+      const { hash } = generateVoteHash(candidate, walletAddress);
+
+      console.log("Generated Hash:", hash);
+
+      const response = await submitVote(hash);
+
+      console.log("Backend Response:", response);
+
+      alert("Vote submitted!"); // to be replaced with react-toast
+    } catch (error) {
+      console.error(error);
+      alert("Error submitting vote"); // to be replaced with react-toast
+    }
+  };
+  
+  return (
+    <div>
+      Vote Page
+      <button onClick={handleVote}>Click Me!</button>
+    </div>
+  );
 };
 
 export default VotePage;
