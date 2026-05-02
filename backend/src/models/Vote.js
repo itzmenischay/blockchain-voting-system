@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 const voteSchema = new mongoose.Schema({
-  voteHash: String,
-  timeStamp: { type: Date, default: Date.now },
+  voteHash: { type: String, required: true, index: true },
+  timestamp: { type: Date, default: Date.now },
   batchId: String,
 });
 
