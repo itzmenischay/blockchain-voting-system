@@ -7,8 +7,15 @@ const hash = (data) => CryptoJS.SHA256(data).toString();
 export const generateProof = async (voteHash) => {
   const vote = await Vote.findOne({ voteHash });
 
-  if (!vote || !vote.batchId) {
-    throw new Error("Vote not found or not batched");
+  if (!vote) {
+    throw new Error("Vote not found");
+  }
+
+  if (!vote.batchId) {
+    return {
+      pending: true,
+      message: "Vote is recorded but not yet batched",
+    };
   }
 
   const batchVotes = await Vote.find({ batchId: vote.batchId });

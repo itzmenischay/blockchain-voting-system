@@ -1,24 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { generateVoteHash } from "../utils/hash.js";
 import { submitVote } from "../services/voteService.js";
+import { verifyVote } from "../services/verifyService.js";
 import { connectWallet, signMessage } from "../utils/wallet.js";
 import { generateNullifier } from "../utils/nullifier.js";
 
 const VotePage = () => {
   const [wallet, setWallet] = useState(null);
   const [status, setStatus] = useState("");
+  const [voteHash, setVoteHash] = useState("");
+  const [verifyResult, setVerifyResult] = useState(null);
 
   const candidates = ["Candidate A", "Candidate B"];
-  const electionId = "election-1"; // temporary
+  const electionId = "election-1";
 
+  // connect wallet
   const handleConnectWallet = async () => {
     const address = await connectWallet();
     if (address) {
       setWallet(address);
-      setStatus("Wallet Connected!");
+      setStatus("Wallet connected ✔");
     }
   };
 
+  // vote
   const handleVote = async (candidate) => {
     try {
       if (!wallet) {
@@ -28,67 +33,126 @@ const VotePage = () => {
 
       setStatus("Signing vote...");
 
-      // 1. generate vote hash
       const { hash } = generateVoteHash(candidate, wallet);
+      const nullifier = generateNullifier(wallet, electionId);
 
-      // 2. generate nullifier
-      const nullifer = generateNullifier(wallet, electionId);
-
-      // 3. sign message
       const message = `Vote:${hash}`;
       const signature = await signMessage(message);
 
-      console.log("Signature: ", signature);
-      console.log("Nullifier: ", nullifer);
-      console.log("Signature: ", signature);
-
       setStatus("Submitting vote...");
 
-      // 4. send everything
-      await submitVote(hash, wallet, signature, nullifer);
+      await submitVote(hash, wallet, signature, nullifier);
 
-      setStatus("Vote submitted successfully!");
+      setVoteHash(hash); // auto-fill for verification
+      setStatus("Vote submitted successfully ✔");
     } catch (error) {
       console.error(error);
+
       const msg = error.response?.data?.error;
+
       if (msg === "User already voted") {
-        setStatus("You have already voted!");
+        setStatus("You have already voted");
       } else if (msg === "Invalid signature") {
-        setStatus("Signature verification failed!");
+        setStatus("Signature verification failed");
       } else {
-        setStatus("Something went wrong.");
+        setStatus("Something went wrong");
       }
     }
   };
 
-  useEffect(() => {
-    console.log("Ethereum object: ", window.ethereum);
-  }, []);
+  // verify vote
+  const handleVerify = async () => {
+    try {
+      const res = await verifyVote(voteHash);
+
+      if (res.pending) {
+        setVerifyResult(null);
+        setStatus("Vote recorded, waiting for batch...");
+        return;
+      }
+
+      setVerifyResult(res);
+      setStatus("Vote verified!");
+    } catch (error) {
+      console.error(error);
+      setVerifyResult(null);
+      setStatus("Verification failed");
+    }
+  };
 
   return (
-    <>
-      <div className="flex flex-col justify-center items-center">
-        <h2 className="text-3xl font-bold m-10">Vote Page</h2>
-        <div className="flex justify-between p-10">
-          {candidates.map((candidate) => (
-            <div key={candidate} style={{ marginBottom: "10px" }} className="flex flex-col justify-center items-center p-10 border">
-              <span>{candidate}</span>
-              <button
-                onClick={() => handleVote(candidate)}
-                style={{ marginLeft: "10px" }}
-                className="border rounded-xl p-4 bg-slate-400 text-white font-bold cursor-pointer"
-              >
-                Vote
-              </button>
-            </div>
-          ))}
-        </div>
+    <div className="flex flex-col items-center p-10">
+      <h2 className="text-3xl font-bold mb-6">Blockchain Voting System</h2>
 
-        {/* status */}
-        <p style={{ marginTop: "20px" }}>{status}</p>
-        <button className="border rounded-xl p-4 bg-slate-400 text-white font-bold cursor-pointer" onClick={handleConnectWallet}>Connect Wallet</button>
+      {/* Wallet */}
+      {wallet ? (
+        <p className="mb-4 text-green-600">
+          Connected: {wallet.slice(0, 6)}...{wallet.slice(-4)}
+        </p>
+      ) : (
+        <button
+          onClick={handleConnectWallet}
+          className="mb-6 px-6 py-2 bg-blue-500 text-white rounded-lg"
+        >
+          Connect Wallet
+        </button>
+      )}
+
+      {/* Candidates */}
+      <div className="flex gap-6 mb-6">
+        {candidates.map((candidate) => (
+          <div
+            key={candidate}
+            className="flex flex-col items-center p-6 border rounded-lg shadow"
+          >
+            <span className="mb-2 font-semibold">{candidate}</span>
+
+            <button
+              onClick={() => handleVote(candidate)}
+              className="px-4 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800"
+            >
+              Vote
+            </button>
+          </div>
+        ))}
       </div>
-    </>
+
+      {/* Status */}
+      <p className="mb-6 text-sm text-gray-700">{status}</p>
+
+      {/* Verification Section */}
+      <div className="w-full max-w-md border-t pt-6">
+        <h3 className="text-xl font-semibold mb-3">Verify Your Vote</h3>
+
+        <input
+          type="text"
+          placeholder="Enter vote hash"
+          value={voteHash}
+          onChange={(e) => setVoteHash(e.target.value)}
+          className="w-full p-2 border rounded mb-3"
+        />
+
+        <button
+          onClick={handleVerify}
+          className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Verify Vote
+        </button>
+
+        {/* Result */}
+        {verifyResult && (
+          <div className="mt-4 p-3 bg-green-50 border rounded">
+            <p className="text-green-700 font-semibold">
+              Vote is included in batch
+            </p>
+
+            <p className="text-sm mt-2 break-all">
+              <strong>Root:</strong> {verifyResult.root}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

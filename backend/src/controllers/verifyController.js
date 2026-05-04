@@ -6,6 +6,10 @@ export const verifyVote = async (req, res) => {
 
     const result = await generateProof(voteHash);
 
+    if (result.pending) {
+      return res.status(200).json(result);
+    }
+
     res.json({
       success: true,
       ...result,
