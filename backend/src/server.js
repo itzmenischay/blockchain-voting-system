@@ -5,6 +5,7 @@ import { connectDB } from "./config/db.js";
 
 // route imports
 import voteRoutes from "./routes/voteRoutes.js";
+import verifyRoutes from './routes/verifyRoutes.js'
 
 // services imports
 import { processBatch } from "./services/batchService.js";
@@ -18,12 +19,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// App routes
 app.use("/api/v1/votes", voteRoutes);
+app.use("/api/v1/verify", verifyRoutes);
 
 // temporary - runs processBatch() every 30 seconds
 setInterval(() => {
   processBatch();
-}, 30000)
+}, 60000)
 
 const PORT = process.env.PORT || 5000;
 
