@@ -67,23 +67,26 @@ const VotePage = () => {
 
   return (
     <>
-      <div>
-        <h2>Vote Page</h2>
-        {candidates.map((candidate) => (
-          <div key={candidate} style={{ marginBottom: "10px" }}>
-            <span>{candidate}</span>
-            <button
-              onClick={() => handleVote(candidate)}
-              style={{ marginLeft: "10px" }}
-            >
-              Vote
-            </button>
-          </div>
-        ))}
+      <div className="flex flex-col justify-center items-center">
+        <h2 className="text-3xl font-bold m-10">Vote Page</h2>
+        <div className="flex justify-between p-10">
+          {candidates.map((candidate) => (
+            <div key={candidate} style={{ marginBottom: "10px" }} className="flex flex-col justify-center items-center p-10 border">
+              <span>{candidate}</span>
+              <button
+                onClick={() => handleVote(candidate)}
+                style={{ marginLeft: "10px" }}
+                className="border rounded-xl p-4 bg-slate-400 text-white font-bold cursor-pointer"
+              >
+                Vote
+              </button>
+            </div>
+          ))}
+        </div>
 
         {/* status */}
         <p style={{ marginTop: "20px" }}>{status}</p>
-        <button onClick={handleConnectWallet}>Connect Wallet</button>
+        <button className="border rounded-xl p-4 bg-slate-400 text-white font-bold cursor-pointer" onClick={handleConnectWallet}>Connect Wallet</button>
       </div>
     </>
   );
