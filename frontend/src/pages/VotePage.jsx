@@ -1,14 +1,15 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { generateVoteHash } from "../utils/hash.js";
 import { submitVote } from "../services/voteService.js";
 import { connectWallet, signMessage } from "../utils/wallet.js";
+import { generateNullifier } from "../utils/nullifier.js";
 
 const VotePage = () => {
   const [wallet, setWallet] = useState(null);
   const [status, setStatus] = useState("");
 
   const candidates = ["Candidate A", "Candidate B"];
+  const electionId = "election-1"; // temporary
 
   const handleConnectWallet = async () => {
     const address = await connectWallet();
@@ -27,22 +28,36 @@ const VotePage = () => {
 
       setStatus("Signing vote...");
 
+      // 1. generate vote hash
       const { hash } = generateVoteHash(candidate, wallet);
 
-      // Message to sign
-      const message = `Vote:${hash}`;
+      // 2. generate nullifier
+      const nullifer = generateNullifier(wallet, electionId);
 
+      // 3. sign message
+      const message = `Vote:${hash}`;
       const signature = await signMessage(message);
+
+      console.log("Signature: ", signature);
+      console.log("Nullifier: ", nullifer);
       console.log("Signature: ", signature);
 
       setStatus("Submitting vote...");
 
-      await submitVote(hash, wallet, signature);
+      // 4. send everything
+      await submitVote(hash, wallet, signature, nullifer);
 
       setStatus("Vote submitted successfully!");
     } catch (error) {
       console.error(error);
-      setStatus("Error submitting vote!");
+      const msg = error.response?.data?.error;
+      if (msg === "User already voted") {
+        setStatus("You have already voted!");
+      } else if (msg === "Invalid signature") {
+        setStatus("Signature verification failed!");
+      } else {
+        setStatus("Something went wrong.");
+      }
     }
   };
 

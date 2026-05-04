@@ -1,30 +1,37 @@
-import { ethers } from 'ethers'
+import { ethers } from "ethers";
 import Vote from "../models/Vote.js";
 
 export const submitVote = async (req, res) => {
   try {
-    const { voteHash, walletAddress, signature } = req.body;
+    const { voteHash, walletAddress, signature, nullifier } = req.body;
 
-    if (!voteHash || !walletAddress || !signature) {
+    if (!voteHash || !walletAddress || !signature || !nullifier) {
       return res.status(400).json({ error: "Missing fields" });
     }
-    
-    const message = `Vote:${voteHash}`
 
-    // recover signer
-    const recoveredAddress = ethers.verifyMessage(message, signature)
+    const message = `Vote:${voteHash}`;
+    const recoveredAddress = ethers.verifyMessage(message, signature);
 
-    if(recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
-      return res.status(401).json({error: "Invalid signature"})
+    if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+      return res.status(401).json({ error: "Invalid signature" });
     }
 
-    // duplocate vote check
+    // check double voting
+    const existingNullifier = await Vote.findOne({ nullifier });
+    if (existingNullifier) {
+      return res.status(400).json({ error: "User already voted" });
+    }
+
+    // optional: duplicate hash check
     const existing = await Vote.findOne({ voteHash });
     if (existing) {
       return res.status(400).json({ error: "Duplicate vote detected" });
     }
 
-    const vote = await Vote.create({ voteHash });
+    const vote = await Vote.create({
+      voteHash,
+      nullifier,
+    });
 
     res.status(201).json({
       success: true,
