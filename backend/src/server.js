@@ -7,6 +7,7 @@ import { connectDB } from "./config/db.js";
 import voteRoutes from "./routes/voteRoutes.js";
 import verifyRoutes from './routes/verifyRoutes.js'
 import batchRoutes from './routes/batchRoutes.js'
+import authRoutes from './routes/authRoutes.js'
 
 // services imports
 import { processBatch } from "./services/batchService.js";
@@ -24,6 +25,9 @@ app.use(express.json());
 app.use("/api/v1/votes", voteRoutes);
 app.use("/api/v1/verify", verifyRoutes);
 app.use("/api/v1/batches", batchRoutes);
+
+// auth routes
+app.use("/api/auth", authRoutes)
 
 // temporary - runs processBatch() every 30 seconds
 setInterval(() => {
