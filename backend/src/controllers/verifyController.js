@@ -1,20 +1,40 @@
+import Vote from "../models/Vote.js";
 import { generateProof } from "../utils/proof.js";
 
 export const verifyVote = async (req, res) => {
   try {
     const { voteHash } = req.params;
 
-    const result = await generateProof(voteHash);
+    const vote = await Vote.findOne({ voteHash });
 
-    if (result.pending) {
-      return res.status(200).json(result);
+    if (!vote) {
+      return res.status(404).json({
+        success: false,
+        message: "Vote not found",
+      });
     }
 
-    res.json({
+    if (!vote.batchId) {
+      return res.json({
+        success: true,
+        data: {
+          status: "pending",
+        },
+      });
+    }
+
+    return res.json({
       success: true,
-      ...result,
+      data: {
+        status: "verified",
+        batchId: vote.batchId,
+        root: vote.merkleRoot || null,
+      },
     });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

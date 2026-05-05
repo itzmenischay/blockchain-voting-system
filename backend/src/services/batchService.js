@@ -21,7 +21,7 @@ export const processBatch = async () => {
     // 4. update DB first (safe)
     await Vote.updateMany(
       { _id: { $in: votes.map((v) => v._id) } },
-      { batchId }
+      { batchId, status: "batched" }
     );
 
     console.log("Batch created:");

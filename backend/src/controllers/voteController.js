@@ -36,9 +36,13 @@ export const submitVote = async (req, res) => {
 
       return res.status(201).json({
         success: true,
-        id: vote._id,
+        message: "Vote submitted successfully",
+        data: {
+          id: vote._id,
+          voteHash,
+          status: "pending",
+        },
       });
-
     } catch (err) {
       // 🔥 HANDLE DUPLICATE KEY ERROR
       if (err.code === 11000) {
@@ -47,7 +51,6 @@ export const submitVote = async (req, res) => {
 
       throw err; // rethrow unknown errors
     }
-
   } catch (error) {
     console.error("🔥 CONTROLLER ERROR:", error);
     return res.status(500).json({ error: error.message });
