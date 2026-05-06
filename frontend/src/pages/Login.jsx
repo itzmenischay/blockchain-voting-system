@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Toast from "../components/Toast";
 import { useNavigate, Link } from "react-router";
 import { loginUser } from "../services/authService";
@@ -41,8 +41,9 @@ const Login = () => {
       });
 
       showToast("Login successful!", "success");
-
-      navigate("/vote-page");
+      setTimeout(() => {
+        navigate("/vote-page");
+      }, 1200);
     } catch (error) {
       showToast(error.response?.data?.message || "Login failed", "error");
     } finally {
@@ -52,11 +53,21 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-24 pt-0">
+      {/* Toast */}
+      <AnimatePresence>
+        {toastConfig && (
+          <Toast
+            message={toastConfig.message}
+            type={toastConfig.type}
+            onClose={() => setToastConfig(null)}
+          />
+        )}
+      </AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.8 }}
-        animate={{ opacity: 1, y: 0, scale: 1, }}
+        initial={{ opacity: 0, y: 20, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md bg-white/5 backdrop:blur-xl border border-white/10 rounded-3xl p-8"
+        className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8"
       >
         <h1 className="text-4xl font-bold text-center text-white mb-2">
           Welcome Back
@@ -91,8 +102,8 @@ const Login = () => {
 
           <motion.button
             whileTap={{ scale: 0.95 }}
-            disabled={{ loading }}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold flex items-center justify-center gap-2"
+            disabled={loading}
+            className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold flex items-center justify-center gap-2 cursor-pointer"
           >
             {loading ? <Loader2 className="animate-spin w-5 h-5" /> : "Login"}
           </motion.button>

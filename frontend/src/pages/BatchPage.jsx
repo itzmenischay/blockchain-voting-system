@@ -10,7 +10,7 @@ const BatchPage = () => {
     const fetchBatches = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/v1/batches");
-        setBatches(res.data);
+        setBatches(Array.isArray(res.data) ? res.data : res.data.data || []);
       } catch (error) {
         console.error(error);
       } finally {

@@ -5,23 +5,13 @@ import User from "../models/User.js";
 
 export const submitVote = async (req, res) => {
   try {
-    const {
-      voteHash,
-      walletAddress,
-      signature,
-      nullifier,
-    } = req.body;
+    const { voteHash, walletAddress, signature, nullifier } = req.body;
 
     // authenticated user from JWT middleware
     const userId = req.user.id;
 
     // validate fields
-    if (
-      !voteHash ||
-      !walletAddress ||
-      !signature ||
-      !nullifier
-    ) {
+    if (!voteHash || !walletAddress || !signature || !nullifier) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
@@ -49,10 +39,7 @@ export const submitVote = async (req, res) => {
     }
 
     // prevent wallet spoofing
-    if (
-      user.walletAddress.toLowerCase() !==
-      walletAddress.toLowerCase()
-    ) {
+    if (user.walletAddress.toLowerCase() !== walletAddress.toLowerCase()) {
       return res.status(401).json({
         success: false,
         message: "Wallet mismatch",
@@ -65,16 +52,9 @@ export const submitVote = async (req, res) => {
 
     const message = `Vote:${voteHash}`;
 
-    const recoveredAddress =
-      ethers.utils.verifyMessage(
-        message,
-        signature
-      );
+    const recoveredAddress = ethers.utils.verifyMessage(message, signature);
 
-    if (
-      recoveredAddress.toLowerCase() !==
-      walletAddress.toLowerCase()
-    ) {
+    if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
       return res.status(401).json({
         success: false,
         message: "Invalid signature",
@@ -86,8 +66,7 @@ export const submitVote = async (req, res) => {
     // ==========================================
 
     // nullifier check
-    const existingNullifier =
-      await Vote.findOne({ nullifier });
+    const existingNullifier = await Vote.findOne({ nullifier });
 
     if (existingNullifier) {
       return res.status(400).json({
@@ -117,6 +96,7 @@ export const submitVote = async (req, res) => {
         voteHash,
         nullifier,
         userId,
+        walletAddress,
       });
 
       return res.status(201).json({
@@ -141,12 +121,27 @@ export const submitVote = async (req, res) => {
       throw err;
     }
   } catch (error) {
-    console.error(
-      "🔥 VOTE CONTROLLER ERROR:",
-      error
-    );
+    console.error("🔥 VOTE CONTROLLER ERROR:", error);
 
     return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getMyVotes = async (req, res) => {
+  try {
+    const votes = await Vote.find({
+      userId: req.user.id,
+    }).sort({ timestamp: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: votes,
+    });
+  } catch (error) {
+    res.status(500).json({
       success: false,
       message: error.message,
     });

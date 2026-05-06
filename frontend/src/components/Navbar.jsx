@@ -2,10 +2,12 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router";
 import { ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuthStore } from "../store/useAuthStore";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout, isAuthenticated } = useAuthStore();
 
   const navItems = [
     { name: "Home", path: "/" },
@@ -44,6 +46,14 @@ const Navbar = () => {
                 </button>
               );
             })}
+            {isAuthenticated && (
+              <button
+                onClick={logout}
+                className="text-sm font-semibold text-red-400 hover:text-red-300"
+              >
+                Logout
+              </button>
+            )}
           </div>
         </div>
       </div>

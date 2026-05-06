@@ -13,6 +13,7 @@ import Layout from "./components/Layout";
 import BatchPage from "./pages/BatchPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const router = createBrowserRouter([
   {
@@ -29,15 +30,19 @@ const router = createBrowserRouter([
       },
       {
         path: "login",
-        element: <Login/>,
+        element: <Login />,
       },
       {
         path: "signup",
-        element: <Signup/>
+        element: <Signup />,
       },
       {
         path: "vote-page",
-        element: <VotePage />,
+        element: (
+          <ProtectedRoute>
+            <VotePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "batches",

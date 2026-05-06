@@ -235,9 +235,10 @@ const VotePage = () => {
             {voteState === "verified" && (
               <motion.div
                 key="verified"
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{delay: 1, duration: 0.5}}
+                exit={{ opacity: 0 }}
                 className="flex items-center gap-2 text-green-400"
               >
                 <CheckCircle2 className="w-4 h-4" />

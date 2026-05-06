@@ -6,7 +6,7 @@ export const signupUser = async (formData) => {
 };
 
 export const loginUser = async (formData) => {
-  const res = await API.post("/auth/user/signup", formData);
+  const res = await API.post("/auth/user/login", formData);
   return res.data;
 };
 
