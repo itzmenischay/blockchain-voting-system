@@ -27,6 +27,7 @@ import {
   Fingerprint,
 } from "lucide-react";
 import { useVoteStore } from "../store/useVoteStore";
+import { validateWallet } from "../services/authService";
 
 const VotePage = () => {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -64,10 +65,20 @@ const VotePage = () => {
     setIsConnecting(true);
     try {
       const address = await connectWallet();
+      await validateWallet(address);
       setWallet(address);
+      localStorage.setItem("wallet", address);
       showToast("Wallet connected!", "success");
-    } catch {
-      showToast("Failed to connect wallet", "error");
+    } catch (error) {
+      const msg = error.response?.data?.message;
+
+      if (msg === "Wallet already linked to another account") {
+        showToast("This wallet is already linked to another account", "error");
+      } else if (msg === "This account is linked to another wallet") {
+        showToast("This account has a different linked wallet", "error");
+      } else {
+        showToast("Failed to connect wallet", "error");
+      }
     } finally {
       setIsConnecting(false);
     }
@@ -99,11 +110,16 @@ const VotePage = () => {
     } catch (err) {
       setVoteState("idle");
       setActiveCandidate(null);
-
-      const msg = err.response?.data?.error;
+      const msg = err.response?.data?.message;
 
       if (msg === "User already voted") {
         showToast("You already voted!", "error");
+      } else if (msg === "Wallet already linked to another account") {
+        showToast("This wallet is already linked to another account", "error");
+      } else if (msg === "Wallet mismatch") {
+        showToast("Connected wallet does not belong to this account", "error");
+      } else if (msg === "Invalid signature") {
+        showToast("Invalid wallet signature", "error");
       } else {
         showToast("Vote failed", "error");
       }
@@ -237,7 +253,7 @@ const VotePage = () => {
                 key="verified"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{delay: 1, duration: 0.5}}
+                transition={{ delay: 0.5, duration: 0.5 }}
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-2 text-green-400"
               >

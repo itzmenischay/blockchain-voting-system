@@ -34,12 +34,26 @@ export const submitVote = async (req, res) => {
 
     // bind wallet if not already linked
     if (!user.walletAddress) {
-      user.walletAddress = walletAddress;
+      const existingWalletUser = await User.findOne({
+        walletAddress: walletAddress.toLowerCase(),
+      });
+
+      if (existingWalletUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Wallet already linked to another account",
+        });
+      }
+
+      user.walletAddress = walletAddress.toLowerCase();
       await user.save();
     }
 
     // prevent wallet spoofing
-    if (user.walletAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+    if (
+      user.walletAddress &&
+      user.walletAddress !== walletAddress.toLowerCase()
+    ) {
       return res.status(401).json({
         success: false,
         message: "Wallet mismatch",
@@ -96,7 +110,8 @@ export const submitVote = async (req, res) => {
         voteHash,
         nullifier,
         userId,
-        walletAddress,
+        walletAddress: walletAddress.toLowerCase(),
+        status: "pending",
       });
 
       return res.status(201).json({
@@ -138,7 +153,14 @@ export const getMyVotes = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: votes,
+      data: votes.map((vote) => ({
+        id: vote._id,
+        voteHash: vote.voteHash,
+        walletAddress: vote.walletAddress,
+        batchId: vote.batchId,
+        status: vote.status,
+        timestamp: vote.timestamp,
+      })),
     });
   } catch (error) {
     res.status(500).json({

@@ -1,10 +1,7 @@
 import User from "../models/User.js";
 import Admin from "../models/Admin.js";
 
-import {
-  hashPassword,
-  comparePassword,
-} from "../utils/hashPassword.js";
+import { hashPassword, comparePassword } from "../utils/hashPassword.js";
 
 import { generateToken } from "../utils/generateToken.js";
 
@@ -97,10 +94,7 @@ export const loginUser = async (req, res) => {
     }
 
     // compare password
-    const isMatch = await comparePassword(
-      password,
-      user.password
-    );
+    const isMatch = await comparePassword(password, user.password);
 
     if (!isMatch) {
       return res.status(400).json({
@@ -224,10 +218,7 @@ export const loginAdmin = async (req, res) => {
     }
 
     // compare password
-    const isMatch = await comparePassword(
-      password,
-      admin.password
-    );
+    const isMatch = await comparePassword(password, admin.password);
 
     if (!isMatch) {
       return res.status(400).json({
@@ -255,6 +246,49 @@ export const loginAdmin = async (req, res) => {
   } catch (error) {
     console.error("ADMIN LOGIN ERROR:", error);
 
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const validateWallet = async (req, res) => {
+  try {
+    const { walletAddress } = req.body;
+
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // if user already has another wallet
+    if (
+      user.walletAddress &&
+      user.walletAddress !== walletAddress.toLowerCase()
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "This account is linked to another wallet",
+      });
+    }
+
+    // first time linking
+    if (!user.walletAddress) {
+      user.walletAddress = walletAddress.toLowerCase();
+      await user.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "wallet validated",
+    });
+  } catch (error) {
     return res.status(500).json({
       success: false,
       message: error.message,
