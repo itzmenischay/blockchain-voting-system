@@ -11,6 +11,8 @@ import Home from "./pages/Home";
 import VotePage from "./pages/VotePage";
 import Layout from "./components/Layout";
 import BatchPage from "./pages/BatchPage";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 const router = createBrowserRouter([
   {
@@ -24,6 +26,14 @@ const router = createBrowserRouter([
       {
         path: "home",
         element: <Home />,
+      },
+      {
+        path: "login",
+        element: <Login/>,
+      },
+      {
+        path: "signup",
+        element: <Signup/>
       },
       {
         path: "vote-page",

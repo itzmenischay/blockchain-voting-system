@@ -272,7 +272,8 @@ const VotePage = () => {
                   {c.role}
                 </p>
 
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleVote(c.name)}
                   disabled={
                     voteState === "pending" ||
@@ -288,7 +289,7 @@ const VotePage = () => {
                   ) : (
                     "Cast Vote"
                   )}
-                </button>
+                </motion.button>
               </GlassCard>
             ))}
           </div>

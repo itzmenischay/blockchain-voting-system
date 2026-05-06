@@ -27,7 +27,7 @@ app.use("/api/v1/verify", verifyRoutes);
 app.use("/api/v1/batches", batchRoutes);
 
 // auth routes
-app.use("/api/auth", authRoutes)
+app.use("/api/v1/auth", authRoutes)
 
 // temporary - runs processBatch() every 30 seconds
 setInterval(() => {
