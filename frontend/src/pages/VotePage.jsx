@@ -4,6 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 // services
 import { submitVote } from "../services/voteService";
 import { verifyVote } from "../services/verifyService";
+import { getElection } from "../services/electionService";
+
+// store
+import { useAuthStore } from "../store/useAuthStore";
 
 // utils
 import { generateVoteHash } from "../utils/hash";
@@ -49,12 +53,14 @@ const VotePage = () => {
     setVoteState,
   } = useVoteStore();
 
-  const candidates = [
-    { id: "1", name: "Alice Johnson", role: "Protocol Delegate" },
-    { id: "2", name: "Bob Smith", role: "Network Validator" },
-  ];
+  const [election, setElection] = useState(null);
 
-  const electionId = "election-1";
+  const [candidates, setCandidates] = useState([]);
+
+  const {updateUser} = useAuthStore();
+
+  // Election
+  const electionId = import.meta.env.VITE_ELECTION_ID;
 
   const showToast = (message, type = "info") => {
     setToastConfig({ message, type });
@@ -62,22 +68,52 @@ const VotePage = () => {
 
   // Connect Wallet
   const handleConnectWallet = async () => {
-    setIsConnecting(true);
     try {
+      setIsConnecting(true);
+
+      // connect metamask
       const address = await connectWallet();
-      await validateWallet(address);
+
+      if (!address) {
+        showToast("Wallet connection failed", "error");
+        return;
+      }
+
+      // validate against backend
+      const user = JSON.parse(localStorage.getItem("user"));
+
+      const message = `Link wallet to voting account: ${user.id}`;
+
+      const signature = await signMessage(message);
+
+      await validateWallet(address, signature);
+
+      // save wallet in vote store
       setWallet(address);
-      localStorage.setItem("wallet", address);
+
+      // update local user
+      const existingUser = JSON.parse(localStorage.getItem("user"));
+
+      const updatedUser = {
+        ...existingUser,
+        walletAddress: address.toLowerCase(),
+      };
+
+      // persist updated user
+      updateUser(updatedUser);
+
       showToast("Wallet connected!", "success");
     } catch (error) {
-      const msg = error.response?.data?.message;
+      console.error(error);
+
+      const msg = error?.response?.data?.message;
 
       if (msg === "Wallet already linked to another account") {
         showToast("This wallet is already linked to another account", "error");
-      } else if (msg === "This account is linked to another wallet") {
-        showToast("This account has a different linked wallet", "error");
+      } else if (msg === "Account already linked to another wallet") {
+        showToast("This account already has another linked wallet", "error");
       } else {
-        showToast("Failed to connect wallet", "error");
+        showToast(msg || "Failed to connect wallet", "error");
       }
     } finally {
       setIsConnecting(false);
@@ -96,13 +132,35 @@ const VotePage = () => {
     setSelectedCandidate(candidateName);
 
     try {
-      const { hash } = generateVoteHash(candidateName, wallet);
+      const { hash } = generateVoteHash(electionId, candidateName, wallet);
       const nullifier = generateNullifier(wallet, electionId);
-      const signature = await signMessage(`Vote:${hash}`);
+      const timestamp = Date.now();
+      const message = `
+Blockchain Voting System
 
-      await submitVote(hash, wallet, signature, nullifier);
+Election: ${electionId}
+Candidate: ${candidateName}
 
-      setVote(hash); // 👈 replaces voteHash + voteState + polling + localStorage
+Vote Hash: ${hash}
+
+Wallet: ${wallet.toLowerCase()}
+
+Timestamp: ${timestamp}
+`;
+
+      const signature = await signMessage(message);
+
+      await submitVote({
+        electionId,
+        candidate: candidateName,
+        voteHash: hash,
+        walletAddress: wallet,
+        signature,
+        nullifier,
+        timestamp,
+      });
+
+      setVote(hash);
 
       setActiveCandidate(null);
 
@@ -110,6 +168,7 @@ const VotePage = () => {
     } catch (err) {
       setVoteState("idle");
       setActiveCandidate(null);
+      console.log(err.response?.data);
       const msg = err.response?.data?.message;
 
       if (msg === "User already voted") {
@@ -135,12 +194,16 @@ const VotePage = () => {
     try {
       const res = await verifyVote(voteHash);
 
-      if (res.pending) {
+      if (res.status === "pending" || res.status === "processing") {
         showToast("Waiting for batch...", "info");
         setVoteState("pending");
+      } else if (res.status === "failed") {
+        setVoteState("failed");
+
+        showToast("Batch processing failed", "error");
       } else {
         setVerifyResult(res);
-        setVerified(); // 👈 replaces voteState + localStorage
+        setVerified();
         showToast("Vote verified!", "success");
       }
     } catch {
@@ -159,13 +222,39 @@ const VotePage = () => {
   };
 
   useEffect(() => {
+    const fetchElection = async () => {
+      try {
+        const res = await getElection(electionId);
+
+        const electionData = res.data;
+
+        setElection(electionData);
+
+        setCandidates(
+          electionData.candidates.map((candidate, index) => ({
+            id: index + 1,
+            name: candidate,
+            role: "Election Candidate",
+          })),
+        );
+      } catch (err) {
+        console.error("Election fetch error:", err);
+
+        showToast("Failed to load election", "error");
+      }
+    };
+
+    fetchElection();
+  }, []);
+
+  useEffect(() => {
     if (!polling || !voteHash) return;
 
     const interval = setInterval(async () => {
       try {
         const res = await verifyVote(voteHash);
 
-        if (!res.pending) {
+        if (res.status === "verified") {
           setVerifyResult(res);
           setVerified();
           clearInterval(interval);
@@ -196,7 +285,7 @@ const VotePage = () => {
         {/* HEADER */}
         <SectionWrapper className="flex flex-col items-center mb-16 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-100 mb-6 tracking-tight">
-            Active Election
+            {election?.title || "Loading Election..."}
           </h2>
           <p className="text-slate-400 max-w-xl mb-10">
             Select a candidate below. Your vote will be cryptographically
@@ -370,7 +459,27 @@ const VotePage = () => {
                   animate={{ opacity: 1 }}
                   className="mt-6 text-green-400 text-sm break-all"
                 >
-                  {verifyResult.root}
+                  <div className="space-y-2">
+                    <p>
+                      <span className="text-slate-400">Batch ID:</span>{" "}
+                      {verifyResult.batchId}
+                    </p>
+
+                    <p>
+                      <span className="text-slate-400">Merkle Root:</span>{" "}
+                      {verifyResult.merkleRoot}
+                    </p>
+
+                    <p>
+                      <span className="text-slate-400">Transaction Hash:</span>{" "}
+                      {verifyResult.transactionHash}
+                    </p>
+
+                    <p>
+                      <span className="text-slate-400">Batch Status:</span>{" "}
+                      {verifyResult.batchStatus}
+                    </p>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

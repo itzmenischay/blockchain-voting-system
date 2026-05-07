@@ -1,41 +1,94 @@
 import Vote from "../models/Vote.js";
+import Batch from "../models/Batch.js";
 import { buildMerkleTree } from "../utils/merkle.js";
 import { storeOnChain } from "./blockchainService.js";
 
 export const processBatch = async () => {
   try {
-    // 1. get unbatched votes
-    const votes = await Vote.find({ batchId: null });
+    // Get only pending votes
+    const votes = await Vote.find({
+      status: "pending",
+      batchId: null,
+    }).sort({ createdAt: 1 });
 
     if (votes.length === 0) {
       console.log("No votes to batch");
       return;
     }
 
-    // 2. build merkle root
-    const { root } = buildMerkleTree(votes);
-
-    // 3. generate batchId (🔥 moved up)
-    const batchId = `batch-${Date.now()}`;
-
-    // 4. update DB first (safe)
+    // Lock votes temporarily
     await Vote.updateMany(
-      { _id: { $in: votes.map((v) => v._id) } },
-      { batchId, status: "batched" }
+      {
+        _id: { $in: votes.map((v) => v._id) },
+      },
+      {
+        status: "processing",
+      },
     );
 
-    console.log("Batch created:");
-    console.log("Batch ID:", batchId);
-    console.log("Merkle Root:", root);
+    // Generate merkle tree
+    const { root } = buildMerkleTree(votes);
 
-    // 5. blockchain call (SAFE)
+    // Generate batch ID
+    const batchId = `batch-${Date.now()}`;
+
+    // Create batch record
+    const batch = await Batch.create({
+      batchId,
+      merkleRoot: root,
+      voteCount: votes.length,
+      status: "processing",
+    });
+
+    let transactionHash = null;
+
     try {
-      await storeOnChain(batchId, root);
-    } catch (err) {
-      console.error("🔥 Blockchain failed, but system continues");
-    }
+      // Store on blockchain
+      const tx = await storeOnChain(batchId, root);
 
+      // if blockchain service returns tx hash
+      transactionHash = tx?.hash || null;
+
+      // Update batch as confirmed
+      batch.status = "confirmed";
+      batch.transactionHash = transactionHash;
+
+      await batch.save();
+
+      // Update votes
+      await Vote.updateMany(
+        {
+          _id: { $in: votes.map((v) => v._id) },
+        },
+        {
+          batchId,
+          merkleRoot: root,
+          transactionHash,
+          status: "batched",
+        },
+      );
+
+      console.log("Batch processed successfully");
+      console.log("Batch ID:", batchId);
+      console.log("Merkle Root:", root);
+    } catch (blockchainErr) {
+      console.error("Blockchain storage failed:", blockchainErr);
+
+      // mark batch failed
+      batch.status = "failed";
+      await batch.save();
+
+      // rollback votes
+      await Vote.updateMany(
+        {
+          _id: { $in: votes.map((v) => v._id) },
+        },
+        {
+          status: "failed",
+        },
+      );
+    }
   } catch (err) {
-    console.error("🔥 BATCH PROCESS ERROR:", err);
+    console.error("BATCH PROCESS ERROR:", err);
   }
 };

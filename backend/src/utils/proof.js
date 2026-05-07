@@ -18,7 +18,9 @@ export const generateProof = async (voteHash) => {
     };
   }
 
-  const batchVotes = await Vote.find({ batchId: vote.batchId });
+  const batchVotes = await Vote.find({
+    batchId: vote.batchId,
+  }).sort({ createdAt: 1 });
 
   const { tree } = buildMerkleTree(batchVotes);
 
@@ -27,11 +29,9 @@ export const generateProof = async (voteHash) => {
     position: p.position,
     data: p.data.toString("hex"),
   }));
-  const root = tree.getRoot().toString("hex");
-
   return {
     proof,
-    root,
+    root: vote.merkleRoot,
     leaf,
   };
 };

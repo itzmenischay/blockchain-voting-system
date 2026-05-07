@@ -4,13 +4,23 @@ import { motion } from "framer-motion";
 
 const BatchPage = () => {
   const [batches, setBatches] = useState([]);
+  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [page, setPage] = useState(1);
+
+  const limit = 10;
 
   useEffect(() => {
     const fetchBatches = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/v1/batches");
-        setBatches(Array.isArray(res.data) ? res.data : res.data.data || []);
+        const res = await axios.get(
+          `http://localhost:5000/api/v1/batches?page=${page}&limit=${limit}`,
+        );
+
+        setBatches(res.data.data || []);
+
+        setPagination(res.data.pagination || null);
       } catch (error) {
         console.error(error);
       } finally {
@@ -18,9 +28,9 @@ const BatchPage = () => {
       }
     };
     fetchBatches();
-  }, []);
+  }, [page]);
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-16">
+    <div className="w-full max-w-6xl mx-auto px-4 py-16 min-h-screen flex flex-col">
       <h2 className="text-4xl font-bold mb-10 text-center">Batch Explorer</h2>
 
       {loading ? (
@@ -28,43 +38,62 @@ const BatchPage = () => {
       ) : batches.length === 0 ? (
         <p className="text-center text-slate-400">No batches yet</p>
       ) : (
-        <div className="space-y-6">
-          {batches.map((batch) => (
-            <motion.div
-              key={batch.batchId}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl"
+        <>
+          {/* Batch List */}
+          <div className="space-y-6 flex-1">
+            {batches.map((batch) => (
+              <motion.div
+                key={batch.batchId}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl"
+              >
+                <h3 className="text-xl font-semibold mb-2">{batch.batchId}</h3>
+
+                <p className="text-sm text-slate-400 break-all">
+                  Root: {batch.merkleRoot || "Not stored"}
+                </p>
+
+                <p className="text-sm text-slate-400 mt-2 break-all">
+                  Transaction: {batch.transactionHash || "Pending"}
+                </p>
+
+                <p className="text-sm text-slate-400 mt-2">
+                  Status: {batch.status}
+                </p>
+
+                <p className="text-sm text-slate-400 mt-2">
+                  Votes: {batch.voteCount}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-center gap-4 mt-16 pb-10">
+            <button
+              disabled={!pagination?.hasPrevPage}
+              onClick={() => setPage((p) => p - 1)}
+              className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
             >
-              <h3 className="text-xl font-semibold mb-2">{batch.batchId}</h3>
+              Previous
+            </button>
 
-              <p className="text-sm text-slate-400 break-all">
-                Root: {batch.merkleRoot || "Not stored"}
-              </p>
+            <span className="text-slate-400 flex items-center">
+              Page {pagination?.page || 1}
+            </span>
 
-              <p className="text-sm text-slate-400 mt-2">
-                Votes: {batch.votes.length}
-              </p>
-
-              <details className="mt-4">
-                <summary className="cursor-pointer text-blue-400">
-                  View Votes
-                </summary>
-
-                <div className="mt-2 text-xs text-slate-400 space-y-1">
-                  {batch.votes.map((v, i) => (
-                    <div key={i} className="break-all">
-                      {v}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            </motion.div>
-          ))}
-        </div>
+            <button
+              disabled={!pagination?.hasNextPage}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
 };
-
 export default BatchPage;

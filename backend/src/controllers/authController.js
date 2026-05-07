@@ -1,19 +1,22 @@
+import { ethers } from "ethers";
 import User from "../models/User.js";
 import Admin from "../models/Admin.js";
+import { validatePassword } from "../utils/validatePassword.js";
 
 import { hashPassword, comparePassword } from "../utils/hashPassword.js";
 
 import { generateToken } from "../utils/generateToken.js";
 
-// ==========================================
 // USER SIGNUP
-// ==========================================
 export const signupUser = async (req, res) => {
   try {
     const { name, email, password, profilePic } = req.body;
 
+    // normalize email
+    const normalizedEmail = email?.toLowerCase().trim();
+
     // validate fields
-    if (!name || !email || !password) {
+    if (!name || !normalizedEmail || !password) {
       return res.status(400).json({
         success: false,
         message: "All required fields are required",
@@ -21,12 +24,22 @@ export const signupUser = async (req, res) => {
     }
 
     // check existing user
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
         message: "User already exists",
+      });
+    }
+
+    // Password strength validation
+    const passwordError = validatePassword(password);
+
+    if (passwordError) {
+      return res.status(400).json({
+        success: false,
+        message: passwordError,
       });
     }
 
@@ -36,7 +49,7 @@ export const signupUser = async (req, res) => {
     // create user
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       profilePic,
     });
@@ -68,9 +81,7 @@ export const signupUser = async (req, res) => {
   }
 };
 
-// ==========================================
 // USER LOGIN
-// ==========================================
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -83,8 +94,11 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    // normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+
     // find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(400).json({
@@ -130,12 +144,13 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// ==========================================
 // ADMIN SIGNUP
-// ==========================================
 export const signupAdmin = async (req, res) => {
   try {
     const { name, email, password, profilePic } = req.body;
+
+    // normalize email
+    const normalizedEmail = email?.toLowerCase().trim();
 
     // validate fields
     if (!name || !email || !password) {
@@ -146,12 +161,22 @@ export const signupAdmin = async (req, res) => {
     }
 
     // check existing admin
-    const existingAdmin = await Admin.findOne({ email });
+    const existingAdmin = await Admin.findOne({ email: normalizedEmail });
 
     if (existingAdmin) {
       return res.status(400).json({
         success: false,
         message: "Admin already exists",
+      });
+    }
+
+    // Password strength validation
+    const passwordError = validatePassword(password);
+
+    if (passwordError) {
+      return res.status(400).json({
+        success: false,
+        message: passwordError,
       });
     }
 
@@ -161,7 +186,7 @@ export const signupAdmin = async (req, res) => {
     // create admin
     const admin = await Admin.create({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       profilePic,
     });
@@ -192,9 +217,7 @@ export const signupAdmin = async (req, res) => {
   }
 };
 
-// ==========================================
 // ADMIN LOGIN
-// ==========================================
 export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -207,8 +230,11 @@ export const loginAdmin = async (req, res) => {
       });
     }
 
+    // normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+
     // find admin
-    const admin = await Admin.findOne({ email });
+    const admin = await Admin.findOne({ email: normalizedEmail });
 
     if (!admin) {
       return res.status(400).json({
@@ -255,9 +281,22 @@ export const loginAdmin = async (req, res) => {
 
 export const validateWallet = async (req, res) => {
   try {
-    const { walletAddress } = req.body;
+    const { walletAddress, signature } = req.body;
 
     const userId = req.user.id;
+
+    // validate fields
+    if (!walletAddress || !signature) {
+      return res.status(400).json({
+        success: false,
+        message: "walletAddress and signature are required",
+      });
+    }
+
+    // normalize
+    const normalizedWallet = walletAddress.toLowerCase();
+
+    // find user
     const user = await User.findById(userId);
 
     if (!user) {
@@ -267,28 +306,58 @@ export const validateWallet = async (req, res) => {
       });
     }
 
-    // if user already has another wallet
-    if (
-      user.walletAddress &&
-      user.walletAddress !== walletAddress.toLowerCase()
-    ) {
+    // prevent changing linked wallet
+    if (user.walletAddress && user.walletAddress !== normalizedWallet) {
       return res.status(401).json({
         success: false,
-        message: "This account is linked to another wallet",
+        message: "Account already linked to another wallet",
       });
     }
 
-    // first time linking
-    if (!user.walletAddress) {
-      user.walletAddress = walletAddress.toLowerCase();
-      await user.save();
+    // prevent duplicate wallet usage
+    const existingWalletUser = await User.findOne({
+      walletAddress: normalizedWallet,
+      _id: { $ne: userId },
+    });
+
+    if (existingWalletUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Wallet already linked to another account",
+      });
     }
+
+    // Signature Verification
+
+    const message = `Link wallet to voting account: ${userId}`;
+
+    const recoveredAddress = ethers.utils.verifyMessage(message, signature);
+
+    if (recoveredAddress.toLowerCase() !== normalizedWallet) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid wallet signature",
+      });
+    }
+
+    // link wallet
+    user.walletAddress = normalizedWallet;
+
+    await user.save();
 
     return res.status(200).json({
       success: true,
-      message: "wallet validated",
+      message: "Wallet linked successfully",
+      data: {
+        walletAddress: normalizedWallet,
+      },
     });
+    console.log("MESSAGE:", message);
+    console.log("RECOVERED:", recoveredAddress);
+    console.log("EXPECTED:", normalizedWallet);
   } catch (error) {
+    console.error("VALIDATE WALLET ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: error.message,

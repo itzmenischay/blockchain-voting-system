@@ -1,17 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { ShieldCheck } from "lucide-react";
-import { motion } from "framer-motion";
+import { ShieldCheck, User } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
+import UserModal from "./UserModal";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout, isAuthenticated } = useAuthStore();
+
+  const { isAuthenticated, user, logout } = useAuthStore();
+
+  const [openProfile, setOpenProfile] = useState(false);
 
   const navItems = [
     { name: "Home", path: "/" },
-    { name: "Vote App", path: "/vote-page" },
+    { name: "Vote", path: "/vote-page" },
     { name: "Batches", path: "/batches" },
   ];
 
@@ -28,6 +31,7 @@ const Navbar = () => {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
+
             <span className="font-semibold text-white">VoteChain</span>
           </div>
 
@@ -40,19 +44,49 @@ const Navbar = () => {
                 <button
                   key={item.name}
                   onClick={() => navigate(item.path)}
-                  className={`text-sm font-medium transition ${isActive ? "text-white" : "text-slate-500 hover:text-white"}`}
+                  className={`text-sm font-medium transition ${
+                    isActive ? "text-white" : "text-slate-500 hover:text-white"
+                  }`}
                 >
                   {item.name}
                 </button>
               );
             })}
-            {isAuthenticated && (
+
+            {/* AUTH SECTION */}
+            {!isAuthenticated ? (
               <button
-                onClick={logout}
-                className="text-sm font-semibold text-red-400 hover:text-red-300"
+                onClick={() => navigate("/login")}
+                className="px-5 py-2 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-200 transition"
               >
-                Logout
+                Login
               </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => setOpenProfile(true)}
+                  className="w-11 h-11 rounded-full overflow-hidden border border-white/10 hover:border-white/20 transition"
+                >
+                  {user?.profilePic ? (
+                    <img
+                      src={user.profilePic}
+                      alt="profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-white/5">
+                      <User className="w-5 h-5 text-slate-300" />
+                    </div>
+                  )}
+                </button>
+
+                <UserModal
+                  open={openProfile}
+                  onClose={() => setOpenProfile(false)}
+                  user={user}
+                  logout={logout}
+                />
+              </>
             )}
           </div>
         </div>

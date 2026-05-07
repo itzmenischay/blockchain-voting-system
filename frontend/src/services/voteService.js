@@ -1,22 +1,29 @@
 import API from "./api";
 
-export const submitVote = async (
+export const submitVote = async ({
+  electionId,
+  candidate,
   voteHash,
   walletAddress,
   signature,
   nullifier,
-) => {
-  const res = await API.post("/v1/votes", {
+  timestamp,
+}) => {
+  const res = await API.post("/v1/votes/submit", {
+    electionId,
+    candidate,
     voteHash,
     walletAddress,
     signature,
     nullifier,
+    timestamp,
   });
 
   return res.data;
 };
 
-export const getMyVotes = async () => {
-  const res = await API.get("/v1/votes/my-votes");
+export const getMyVotes = async (page = 1, limit = 10) => {
+  const res = await API.get(`/v1/votes/my-votes?page=${page}&limit=${limit}`);
+
   return res.data;
 };

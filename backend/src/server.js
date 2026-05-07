@@ -5,9 +5,10 @@ import { connectDB } from "./config/db.js";
 
 // route imports
 import voteRoutes from "./routes/voteRoutes.js";
-import verifyRoutes from './routes/verifyRoutes.js'
-import batchRoutes from './routes/batchRoutes.js'
-import authRoutes from './routes/authRoutes.js'
+import verifyRoutes from "./routes/verifyRoutes.js";
+import batchRoutes from "./routes/batchRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import electionRoutes from "./routes/electionRoutes.js";
 
 // services imports
 import { processBatch } from "./services/batchService.js";
@@ -25,14 +26,15 @@ app.use(express.json());
 app.use("/api/v1/votes", voteRoutes);
 app.use("/api/v1/verify", verifyRoutes);
 app.use("/api/v1/batches", batchRoutes);
+app.use("/api/v1/elections", electionRoutes);
 
 // auth routes
-app.use("/api/auth", authRoutes)
+app.use("/api/auth", authRoutes);
 
 // temporary - runs processBatch() every 30 seconds
 setInterval(() => {
   processBatch();
-}, 10000)
+}, 10000);
 
 const PORT = process.env.PORT || 5000;
 

@@ -1,36 +1,53 @@
-import Vote from "../models/Vote.js";
+import Batch from "../models/Batch.js";
 
 export const getBatches = async (req, res) => {
   try {
-    const votes = await Vote.find({ batchId: { $ne: null } }).sort({
-      timestamp: -1,
-    });
+    // page & limit
+    const page = Number(req.query.page) || 1;
 
-    const grouped = {};
+    const limit = Number(req.query.limit) || 10;
 
-    votes.forEach((vote) => {
-      if (!grouped[vote.batchId]) {
-        grouped[vote.batchId] = {
-          batchId: vote.batchId,
-          votes: [],
-          timestamp: vote.timestamp,
-          voteCount: 0,
-        };
-      }
+    const skip = (page - 1) * limit;
 
-      grouped[vote.batchId].votes.push(vote.voteHash);
-      grouped[vote.batchId].voteCount++;
-    });
+    // total count
+    const totalBatches = await Batch.countDocuments();
 
-    const result = Object.values(grouped);
+    // paginated batches
+    const batches = await Batch.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Batches fetched successfully",
-      data: result,
+
+      pagination: {
+        total: totalBatches,
+        page,
+        limit,
+
+        totalPages: Math.ceil(totalBatches / limit),
+
+        hasNextPage: page * limit < totalBatches,
+
+        hasPrevPage: page > 1,
+      },
+
+      data: batches.map((batch) => ({
+        batchId: batch.batchId,
+        merkleRoot: batch.merkleRoot,
+        transactionHash: batch.transactionHash,
+
+        voteCount: batch.voteCount,
+
+        status: batch.status,
+
+        createdAt: batch.createdAt,
+      })),
     });
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: err.message,
     });

@@ -7,7 +7,6 @@ export const useVoteStore = create((set) => ({
   polling: false,
 
   setWallet: (wallet) => {
-    localStorage.setItem("wallet", wallet);
     set({ wallet });
   },
 
@@ -36,12 +35,12 @@ export const useVoteStore = create((set) => ({
   setVoteState: (state) => set({ voteState: state }),
 
   hydrate: () => {
-    const wallet = localStorage.getItem("wallet");
+    const user = JSON.parse(localStorage.getItem("user"));
     const voteHash = localStorage.getItem("voteHash");
     const voteState = localStorage.getItem("voteState");
 
     set({
-      wallet: wallet || null,
+      wallet: user?.walletAddress || null,
       voteHash: voteHash || "",
       voteState: voteState || "idle",
       polling: voteState === "pending",

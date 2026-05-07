@@ -19,11 +19,18 @@ export const useAuthStore = create((set) => ({
     });
   },
 
+  updateUser: (updatedUser) => {
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    set({
+      user: updatedUser,
+    });
+  },
+
   logout: () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("role");
-    localStorage.removeItem("wallet");
     localStorage.removeItem("voteHash");
     localStorage.removeItem("voteState");
 

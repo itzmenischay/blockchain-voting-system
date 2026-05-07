@@ -1,10 +1,37 @@
 import mongoose from "mongoose";
 
-const batchSchema = new mongoose.Schema({
-  batchId: String,
-  merkleRoot: String,
-  transactionHash: String,
-  status: String,
-});
+const batchSchema = new mongoose.Schema(
+  {
+    batchId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    merkleRoot: {
+      type: String,
+      required: true,
+    },
+
+    transactionHash: {
+      type: String,
+      default: null,
+    },
+
+    voteCount: {
+      type: Number,
+      default: 0,
+    },
+
+    status: {
+      type: String,
+      enum: ["processing", "confirmed", "failed"],
+      default: "processing",
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
 export default mongoose.model("Batch", batchSchema);

@@ -2,22 +2,25 @@ import { ethers } from "ethers";
 
 export const connectWallet = async () => {
   if (!window.ethereum) {
-    alert("Metamask not installed!");
+    alert("MetaMask not installed!");
     return null;
   }
 
-  const provider = new ethers.BrowserProvider(window.ethereum);
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+
   await provider.send("eth_requestAccounts", []);
 
-  const signer = await provider.getSigner();
+  const signer = provider.getSigner();
+
   const address = await signer.getAddress();
 
   return address;
 };
 
 export const signMessage = async (message) => {
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+  const signer = provider.getSigner();
 
   const signature = await signer.signMessage(message);
 
