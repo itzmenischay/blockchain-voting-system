@@ -6,6 +6,8 @@ import {
   getElectionById,
   updateElection,
   deleteElection,
+  addCandidate,
+  removeCandidate,
 } from "../controllers/electionController.js";
 
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
@@ -23,5 +25,9 @@ router.get("/admin/all", protect, adminOnly, getAllElections);
 router.put("/:id", protect, adminOnly, updateElection);
 
 router.delete("/:id", protect, adminOnly, deleteElection);
+
+router.post("/:id/candidates", protect, adminOnly, addCandidate);
+
+router.delete("/:id/candidates/:candidateName", protect, adminOnly, removeCandidate);
 
 export default router;

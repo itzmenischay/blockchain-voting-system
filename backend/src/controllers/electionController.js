@@ -357,3 +357,118 @@ export const deleteElection = async (req, res) => {
     });
   }
 };
+
+export const addCandidate = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { name } = req.body;
+
+    if (!name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate name is required",
+      });
+    }
+
+    const election = await Election.findById(id);
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found",
+      });
+    }
+
+    // lifecycle protection
+    if (election.status !== "upcoming") {
+      return res.status(400).json({
+        success: false,
+        message: "Candidates can only be modified before election starts",
+      });
+    }
+
+    const candidateName = name.trim();
+
+    const exists = election.candidates.some(
+      (candidate) => candidate.toLowerCase() === candidateName.toLowerCase(),
+    );
+
+    if (exists) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate already exists",
+      });
+    }
+
+    election.candidates.push(candidateName);
+
+    await election.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Candidate added successfully",
+
+      data: election,
+    });
+  } catch (error) {
+    console.error("ADD CANDIDATE ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const removeCandidate = async (req, res) => {
+  try {
+    const { id, candidateName } = req.params;
+
+    const election = await Election.findById(id);
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found",
+      });
+    }
+
+    // lifecycle protection
+    if (election.status !== "upcoming") {
+      return res.status(400).json({
+        success: false,
+        message: "Candidates can only be modified before election starts",
+      });
+    }
+
+    const filtered = election.candidates.filter(
+      (candidate) => candidate !== candidateName,
+    );
+
+    if (filtered.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Election must have at least 2 candidates",
+      });
+    }
+
+    election.candidates = filtered;
+
+    await election.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Candidate removed successfully",
+
+      data: election,
+    });
+  } catch (error) {
+    console.error("REMOVE CANDIDATE ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
