@@ -3,6 +3,7 @@ import {
   getAllElections,
   deleteElection,
 } from "../services/adminElectionService";
+
 import CreateElectionModal from "../components/admin/CreateElectionModal";
 import EditElectionModal from "../components/admin/EditElectionModal";
 
@@ -10,25 +11,35 @@ const AdminDashboard = () => {
   const [elections, setElections] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const [page, setPage] = useState(1);
+
   const [openCreateModal, setOpenCreateModal] = useState(false);
+
   const [selectedElection, setSelectedElection] = useState(null);
+
   const [openEditModal, setOpenEditModal] = useState(false);
 
   const limit = 10;
 
+  // Fetch elections
+  const fetchElections = async () => {
+    try {
+      setLoading(true);
+
+      const res = await getAllElections(page, limit);
+
+      setElections(res.data || []);
+
+      setPagination(res.pagination || null);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchElections = async () => {
-      try {
-        await getAllElections(page, limit);
-        setElections(res.data || []);
-        setPagination(res.pagination || null);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchElections();
   }, [page]);
 
@@ -53,6 +64,20 @@ const AdminDashboard = () => {
       setElections((prev) => prev.filter((election) => election._id !== id));
     } catch (error) {
       alert(error.response?.data?.message || "Failed to delete election");
+    }
+  };
+
+  // Status badge styles
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "active":
+        return "bg-emerald-500/20 text-emerald-300 border border-emerald-500/20";
+
+      case "ended":
+        return "bg-red-500/20 text-red-300 border border-red-500/20";
+
+      default:
+        return "bg-blue-500/20 text-blue-300 border border-blue-500/20";
     }
   };
 
@@ -91,26 +116,42 @@ const AdminDashboard = () => {
                   <div>
                     <h2 className="text-xl font-semibold">{election.title}</h2>
 
-                    <p className="text-slate-400 mt-2">
-                      Status: {election.status}
+                    <div className="mt-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyle(
+                          election.status,
+                        )}`}
+                      >
+                        {election.status}
+                      </span>
+                    </div>
+
+                    <p className="text-slate-400 mt-3">
+                      Candidates: {election.candidates.length}
                     </p>
 
-                    <p className="text-slate-400">
-                      Candidates: {election.candidates.length}
+                    <p className="text-slate-500 mt-3 text-sm">
+                      Starts: {new Date(election.startTime).toLocaleString()}
+                    </p>
+
+                    <p className="text-slate-500 text-sm">
+                      Ends: {new Date(election.endTime).toLocaleString()}
                     </p>
                   </div>
 
                   <div className="flex gap-3">
                     <button
+                      disabled={election.status === "ended"}
                       onClick={() => handleEdit(election)}
-                      className="px-4 py-2 rounded-xl bg-white/10"
+                      className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Edit
                     </button>
 
                     <button
+                      disabled={election.status === "active"}
                       onClick={() => handleDelete(election._id)}
-                      className="px-4 py-2 rounded-xl bg-red-500/20 text-red-300"
+                      className="px-4 py-2 rounded-xl bg-red-500/20 text-red-300 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Delete
                     </button>
@@ -148,13 +189,14 @@ const AdminDashboard = () => {
       <CreateElectionModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
-        onCreated={() => window.location.reload()}
+        onCreated={fetchElections}
       />
+
       <EditElectionModal
         open={openEditModal}
         onClose={() => setOpenEditModal(false)}
         election={selectedElection}
-        onUpdated={() => window.location.reload()}
+        onUpdated={fetchElections}
       />
     </div>
   );

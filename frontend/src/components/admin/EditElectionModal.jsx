@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 
 import { X, Plus, Trash2 } from "lucide-react";
 
-import { updateElection } from "../../services/adminElectionService";
+import {
+  updateElection,
+  addCandidate,
+  removeCandidate,
+} from "../../services/adminElectionService";
 
 const EditElectionModal = ({ open, onClose, election, onUpdated }) => {
   const [title, setTitle] = useState("");
@@ -16,6 +20,8 @@ const EditElectionModal = ({ open, onClose, election, onUpdated }) => {
   const [endTime, setEndTime] = useState("");
 
   const [loading, setLoading] = useState(false);
+
+  const [candidateLoading, setCandidateLoading] = useState(false);
 
   if (!open) {
     return null;
@@ -55,22 +61,61 @@ const EditElectionModal = ({ open, onClose, election, onUpdated }) => {
     setCandidates(candidates.filter((_, i) => i !== index));
   };
 
+  // Add candidate
+  const handleAddCandidate = async () => {
+    const name = prompt("Candidate name");
+
+    if (!name?.trim()) {
+      return;
+    }
+
+    try {
+      setCandidateLoading(true);
+
+      const res = await addCandidate(election._id, name);
+
+      setCandidates(res.data.candidates);
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to add candidate");
+    } finally {
+      setCandidateLoading(false);
+    }
+  };
+
+  // Remove Candidate
+  const handleRemoveCandidate = async (candidate) => {
+    const confirmed = window.confirm(`Remove ${candidate}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setCandidateLoading(true);
+
+      const res = await removeCandidate(election._id, candidate);
+
+      setCandidates(res.data.candidates);
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to remove candidate");
+    } finally {
+      setCandidateLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       setLoading(true);
 
-      await updateElection(
-        election._id,
-        {
-            title,
-            description,
-            candidates,
-            startTime,
-            endTime
-        }
-      );
+      await updateElection(election._id, {
+        title,
+        description,
+        candidates,
+        startTime,
+        endTime,
+      });
 
       onUpdated();
 
@@ -123,37 +168,38 @@ const EditElectionModal = ({ open, onClose, election, onUpdated }) => {
           />
 
           <div>
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex justify-between items-center mb-4">
               <h3 className="font-medium">Candidates</h3>
 
-              <button
-                type="button"
-                onClick={addCandidate}
-                className="flex items-center gap-2 text-sm text-slate-300"
-              >
-                <Plus className="w-4 h-4" />
-                Add
-              </button>
+              {election?.status === "upcoming" && (
+                <button
+                  type="button"
+                  onClick={handleAddCandidate}
+                  disabled={candidateLoading}
+                  className="px-4 py-2 rounded-xl bg-white/10"
+                >
+                  Add Candidate
+                </button>
+              )}
             </div>
 
             <div className="space-y-3">
-              {candidates.map((candidate, index) => (
-                <div key={index} className="flex gap-3">
-                  <input
-                    type="text"
-                    placeholder={`Candidate ${index + 1}`}
-                    value={candidate}
-                    onChange={(e) => updateCandidate(index, e.target.value)}
-                    className="flex-1 px-5 py-4 rounded-2xl bg-white/5 border border-white/10 outline-none"
-                  />
+              {candidates.map((candidate) => (
+                <div
+                  key={candidate}
+                  className="flex justify-between items-center rounded-2xl bg-white/5 border border-white/10 px-5 py-4"
+                >
+                  <span>{candidate}</span>
 
-                  <button
-                    type="button"
-                    onClick={() => removeCandidate(index)}
-                    className="px-4 rounded-2xl bg-red-500/20 text-red-300"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  {election?.status === "upcoming" && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCandidate(candidate)}
+                      className="text-red-400 hover:text-red-300 transition"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

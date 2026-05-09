@@ -36,3 +36,21 @@ export const deleteElection = async (id) => {
 
   return res.data;
 };
+
+/* ADD CANDIDATE */
+export const addCandidate = async (electionId, name) => {
+  const res = await API.post(`/v1/elections/${electionId}/candidates`, {
+    name,
+  });
+
+  return res.data;
+};
+
+/* REMOVE CANDIDATE */
+export const removeCandidate = async (electionId, candidateName) => {
+  const res = await API.delete(
+    `/v1/elections/${electionId}/candidates/${encodeURIComponent(candidateName)}`,
+  );
+
+  return res.data;
+};
