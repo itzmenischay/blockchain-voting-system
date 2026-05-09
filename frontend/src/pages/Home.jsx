@@ -60,15 +60,15 @@ const Home = () => {
       {/* HERO SECTION */}
       <section className="relative min-h-[90vh] flex flex-col justify-center items-center text-center px-6">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 0, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="max-w-5xl mx-auto flex flex-col items-center"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
+            initial={{ opacity: 0}}
+            animate={{ opacity: 1}}
+            transition={{ delay: 0.8, duration: 0.5 }}
             className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-purple-300 backdrop-blur-sm"
           >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -89,7 +89,7 @@ const Home = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto">
             <button
               onClick={() => navigate("/vote-page")}
-              className="px-8 py-4 bg-white text-slate-950 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors duration-300"
+              className="px-8 py-4 bg-white text-slate-950 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-slate-300 transition-colors duration-300"
             >
               Enter Voting App
               <ArrowRight className="w-5 h-5" />

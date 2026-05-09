@@ -153,7 +153,7 @@ export const signupAdmin = async (req, res) => {
     const normalizedEmail = email?.toLowerCase().trim();
 
     // validate fields
-    if (!name || !email || !password) {
+    if (!name || !normalizedEmail || !password) {
       return res.status(400).json({
         success: false,
         message: "All required fields are required",
@@ -199,7 +199,9 @@ export const signupAdmin = async (req, res) => {
       message: "Admin created successfully",
       data: {
         token,
-        admin: {
+        role: "admin",
+
+        user: {
           id: admin._id,
           name: admin.name,
           email: admin.email,
@@ -261,7 +263,8 @@ export const loginAdmin = async (req, res) => {
       message: "Admin login successful",
       data: {
         token,
-        admin: {
+        role: "admin",
+        user: {
           id: admin._id,
           name: admin.name,
           email: admin.email,
@@ -345,6 +348,7 @@ export const validateWallet = async (req, res) => {
 
     await user.save();
 
+    console.log("MESSAGE:", message);
     return res.status(200).json({
       success: true,
       message: "Wallet linked successfully",

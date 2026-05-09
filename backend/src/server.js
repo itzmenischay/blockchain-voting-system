@@ -26,6 +26,8 @@ app.use(express.json());
 app.use("/api/v1/votes", voteRoutes);
 app.use("/api/v1/verify", verifyRoutes);
 app.use("/api/v1/batches", batchRoutes);
+
+// Election routes
 app.use("/api/v1/elections", electionRoutes);
 
 // auth routes
