@@ -49,8 +49,8 @@ const CreateElectionModal = ({ open, onClose, onCreated }) => {
         title,
         description,
         candidates,
-        startTime,
-        endTime,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
       });
 
       onCreated();

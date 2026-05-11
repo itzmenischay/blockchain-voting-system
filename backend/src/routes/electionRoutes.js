@@ -8,26 +8,53 @@ import {
   deleteElection,
   addCandidate,
   removeCandidate,
+  getElectionResults,
+  getActiveElection,
+  getPublicElections,
 } from "../controllers/electionController.js";
 
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// public
-router.get("/:id", getElectionById);
+/* ---------- PUBLIC ---------- */
 
-// admin
+// active election
+router.get("/active/current", getActiveElection);
+
+// election results
+router.get("/:id/results", getElectionResults);
+
+/* ---------- ADMIN ---------- */
+
+// create
 router.post("/", protect, adminOnly, createElection);
 
+// get all
 router.get("/admin/all", protect, adminOnly, getAllElections);
 
-router.put("/:id", protect, adminOnly, updateElection);
-
-router.delete("/:id", protect, adminOnly, deleteElection);
-
+// add candidate
 router.post("/:id/candidates", protect, adminOnly, addCandidate);
 
-router.delete("/:id/candidates/:candidateName", protect, adminOnly, removeCandidate);
+// remove candidate
+router.delete(
+  "/:id/candidates/:candidateName",
+  protect,
+  adminOnly,
+  removeCandidate,
+);
+
+// update
+router.put("/:id", protect, adminOnly, updateElection);
+
+// delete
+router.delete("/:id", protect, adminOnly, deleteElection);
+
+/* ---------- DYNAMIC LAST ---------- */
+
+// election
+router.get("/", getPublicElections);
+router.get("/active", getActiveElection);
+router.get("/:id", getElectionById);
 
 export default router;

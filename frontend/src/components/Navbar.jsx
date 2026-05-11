@@ -1,32 +1,68 @@
 import React, { useState } from "react";
+
 import { useNavigate, useLocation } from "react-router";
+
 import { motion } from "framer-motion";
+
 import { ShieldCheck, User } from "lucide-react";
+
 import { useAuthStore } from "../store/useAuthStore";
+
+import { useVoteStore } from "../store/useVoteStore";
+
 import UserModal from "./UserModal";
 
 const Navbar = () => {
   const navigate = useNavigate();
+
   const location = useLocation();
 
   const { isAuthenticated, user, logout } = useAuthStore();
 
+  const { setWallet, setVoteState, setVoteHashOnly } = useVoteStore();
+
   const [openProfile, setOpenProfile] = useState(false);
 
+  const role = localStorage.getItem("role");
+
   const navItems = [
-    { name: "Home", path: "/" },
-    { name: "Vote", path: "/vote-page" },
-    { name: "Batches", path: "/batches" },
+    {
+      name: "Home",
+      path: "/",
+    },
+    {
+      name: "Elections",
+      path: "/elections",
+    },
+    {
+      name: "Batches",
+      path: "/batches",
+    },
   ];
 
+  const handleLogout = () => {
+    const currentRole = localStorage.getItem("role");
+
+    logout();
+
+    // reset vote store
+    setWallet(null);
+
+    setVoteState("idle");
+
+    setVoteHashOnly("");
+
+    localStorage.removeItem("token");
+
+    localStorage.removeItem("role");
+
+    localStorage.removeItem("user");
+
+    navigate(currentRole === "admin" ? "/admin/login" : "/login");
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="fixed top-0 left-0 w-full z-50"
-    >
-      {/* glass navbar */}
+    <div className="fixed top-0 left-0 w-full z-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-3 shadow-lg">
           {/* LOGO */}
@@ -60,13 +96,24 @@ const Navbar = () => {
             })}
 
             {/* AUTH SECTION */}
-            {!isAuthenticated ? (
-              <button
-                onClick={() => navigate("/login")}
-                className="px-5 py-2 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-200 transition"
-              >
-                Login
-              </button>
+
+            {/* AUTH SECTION */}
+            {!isAuthenticated && role !== "admin" ? (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate("/admin/login")}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition text-white"
+                >
+                  Admin
+                </button>
+
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-5 py-2 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-200 transition"
+                >
+                  Login
+                </button>
+              </div>
             ) : (
               <>
                 <button
@@ -89,15 +136,18 @@ const Navbar = () => {
                 <UserModal
                   open={openProfile}
                   onClose={() => setOpenProfile(false)}
-                  user={user}
-                  logout={logout}
+                  user={{
+                    ...user,
+                    role: role === "admin" ? "Admin" : "User",
+                  }}
+                  logout={handleLogout}
                 />
               </>
             )}
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

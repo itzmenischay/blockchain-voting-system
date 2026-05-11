@@ -42,7 +42,7 @@ const Login = () => {
 
       showToast("Login successful!", "success");
       setTimeout(() => {
-        navigate("/vote-page");
+        navigate("/elections");
       }, 1200);
     } catch (error) {
       showToast(error.response?.data?.message || "Login failed", "error");

@@ -147,16 +147,24 @@ export const loginUser = async (req, res) => {
 // ADMIN SIGNUP
 export const signupAdmin = async (req, res) => {
   try {
-    const { name, email, password, profilePic } = req.body;
+    const { name, email, password, profilePic, secretCode } = req.body;
 
     // normalize email
     const normalizedEmail = email?.toLowerCase().trim();
 
     // validate fields
-    if (!name || !normalizedEmail || !password) {
+    if (!name || !normalizedEmail || !password || !secretCode) {
       return res.status(400).json({
         success: false,
         message: "All required fields are required",
+      });
+    }
+
+    // secret code validation
+    if (secretCode !== process.env.ADMIN_SECRET_CODE) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid admin secret code",
       });
     }
 
@@ -348,7 +356,6 @@ export const validateWallet = async (req, res) => {
 
     await user.save();
 
-    console.log("MESSAGE:", message);
     return res.status(200).json({
       success: true,
       message: "Wallet linked successfully",
@@ -356,9 +363,6 @@ export const validateWallet = async (req, res) => {
         walletAddress: normalizedWallet,
       },
     });
-    console.log("MESSAGE:", message);
-    console.log("RECOVERED:", recoveredAddress);
-    console.log("EXPECTED:", normalizedWallet);
   } catch (error) {
     console.error("VALIDATE WALLET ERROR:", error);
 

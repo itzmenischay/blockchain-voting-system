@@ -8,14 +8,19 @@ import {
 
 // Page imports
 import Home from "./pages/Home";
+import ElectionsPage from "./pages/ElectionsPage";
 import VotePage from "./pages/VotePage";
 import Layout from "./components/Layout";
 import BatchPage from "./pages/BatchPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import ProtectedRoute from "./components/ProtectedRoute";
+import AdminSignup from "./pages/AdminSignup";
+import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import ResultsPage from "./pages/ResultsPage";
+import AdminResults from "./pages/AdminResults";
 
 const router = createBrowserRouter([
   {
@@ -39,7 +44,15 @@ const router = createBrowserRouter([
         element: <Signup />,
       },
       {
-        path: "vote-page",
+        path: "elections",
+        element: (
+          <ProtectedRoute>
+            <ElectionsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "vote/:electionId",
         element: (
           <ProtectedRoute>
             <VotePage />
@@ -47,7 +60,19 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "admin/login",
+
+        element: <AdminLogin />,
+      },
+
+      {
+        path: "admin/signup",
+
+        element: <AdminSignup />,
+      },
+      {
         path: "admin",
+
         element: (
           <AdminRoute>
             <AdminDashboard />
@@ -57,6 +82,20 @@ const router = createBrowserRouter([
       {
         path: "batches",
         element: <BatchPage />,
+      },
+      {
+        path: "results/:electionId",
+
+        element: <ResultsPage />,
+      },
+      {
+        path: "admin/results/:electionId",
+
+        element: (
+          <AdminRoute>
+            <AdminResults />
+          </AdminRoute>
+        ),
       },
     ],
   },

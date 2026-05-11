@@ -1,12 +1,15 @@
 import API from "./api";
 
-export const getElection = async (
-  electionId
-) => {
+/* GET ALL PUBLIC ELECTIONS */
+export const getAllPublicElections = async () => {
+  const res = await API.get("/v1/elections");
 
-  const res = await API.get(
-    `/v1/elections/${electionId}`
-  );
+  return res.data;
+};
+
+/* GET ELECTION BY ID */
+export const getElectionById = async (electionId) => {
+  const res = await API.get(`/v1/elections/${electionId}`);
 
   return res.data;
 };

@@ -1,15 +1,11 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Wallet, Lock, LogOut, X } from "lucide-react";
-import { useNavigate } from "react-router";
 
 const UserModal = ({ open, onClose, user, logout }) => {
-  const navigate = useNavigate();
-
   const handleLogout = () => {
     logout();
     onClose();
-    navigate("/login");
   };
 
   return (
@@ -73,7 +69,7 @@ const UserModal = ({ open, onClose, user, logout }) => {
 
               {/* Profile section */}
               <div className="flex flex-col items-center pt-2 pb-6">
-                {/* Avatar with ring */}
+                {/* Avatar */}
                 <div className="relative mb-5">
                   <div
                     className="absolute inset-0 rounded-full"
@@ -84,6 +80,7 @@ const UserModal = ({ open, onClose, user, logout }) => {
                       borderRadius: "50%",
                     }}
                   />
+
                   <div
                     className="w-20 h-20 rounded-full overflow-hidden relative"
                     style={{
@@ -101,7 +98,9 @@ const UserModal = ({ open, onClose, user, logout }) => {
                     ) : (
                       <div
                         className="w-full h-full flex items-center justify-center"
-                        style={{ background: "rgba(255,255,255,0.04)" }}
+                        style={{
+                          background: "rgba(255,255,255,0.04)",
+                        }}
                       >
                         <span
                           className="text-2xl font-semibold"
@@ -119,7 +118,9 @@ const UserModal = ({ open, onClose, user, logout }) => {
 
                 <h2
                   className="text-xl font-semibold tracking-tight"
-                  style={{ color: "rgba(255,255,255,0.92)" }}
+                  style={{
+                    color: "rgba(255,255,255,0.92)",
+                  }}
                 >
                   {user?.name}
                 </h2>
@@ -155,6 +156,7 @@ const UserModal = ({ open, onClose, user, logout }) => {
                   label="Email"
                   value={user?.email}
                 />
+
                 <InfoRow
                   icon={<Wallet className="w-4 h-4" />}
                   label="Wallet"
@@ -169,6 +171,7 @@ const UserModal = ({ open, onClose, user, logout }) => {
                   icon={<Lock className="w-3.5 h-3.5" />}
                   label="Change Password"
                 />
+
                 <ActionButton
                   icon={<LogOut className="w-3.5 h-3.5" />}
                   label="Log Out"
@@ -184,8 +187,6 @@ const UserModal = ({ open, onClose, user, logout }) => {
   );
 };
 
-/* ── Sub-components ───────────────────────────────────────────── */
-
 const InfoRow = ({ icon, label, value, mono = false }) => (
   <div
     className="flex items-center gap-3 px-4 py-3.5 rounded-2xl"
@@ -194,7 +195,14 @@ const InfoRow = ({ icon, label, value, mono = false }) => (
       border: "1px solid rgba(255,255,255,0.05)",
     }}
   >
-    <span style={{ color: "rgba(255,255,255,0.25)" }}>{icon}</span>
+    <span
+      style={{
+        color: "rgba(255,255,255,0.25)",
+      }}
+    >
+      {icon}
+    </span>
+
     <div className="min-w-0">
       <p
         className="text-xs mb-0.5"
@@ -207,6 +215,7 @@ const InfoRow = ({ icon, label, value, mono = false }) => (
       >
         {label}
       </p>
+
       <p
         className="text-sm truncate"
         style={{
@@ -226,14 +235,17 @@ const ActionButton = ({ icon, label, onClick, variant = "default" }) => {
 
   const base = {
     background: isDanger ? "rgba(239,68,68,0.07)" : "rgba(255,255,255,0.05)",
+
     border: isDanger
       ? "1px solid rgba(239,68,68,0.15)"
       : "1px solid rgba(255,255,255,0.07)",
+
     color: isDanger ? "rgba(252,165,165,0.85)" : "rgba(255,255,255,0.55)",
   };
 
   const hover = {
     background: isDanger ? "rgba(239,68,68,0.14)" : "rgba(255,255,255,0.09)",
+
     color: isDanger ? "rgba(252,165,165,1)" : "rgba(255,255,255,0.85)",
   };
 
@@ -241,7 +253,10 @@ const ActionButton = ({ icon, label, onClick, variant = "default" }) => {
     <button
       onClick={onClick}
       className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all"
-      style={{ ...base, letterSpacing: "0.01em" }}
+      style={{
+        ...base,
+        letterSpacing: "0.01em",
+      }}
       onMouseEnter={(e) => {
         Object.assign(e.currentTarget.style, hover);
       }}

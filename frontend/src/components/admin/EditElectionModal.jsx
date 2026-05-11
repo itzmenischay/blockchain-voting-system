@@ -23,10 +23,6 @@ const EditElectionModal = ({ open, onClose, election, onUpdated }) => {
 
   const [candidateLoading, setCandidateLoading] = useState(false);
 
-  if (!open) {
-    return null;
-  }
-
   useEffect(() => {
     if (!election) {
       return;
@@ -42,6 +38,10 @@ const EditElectionModal = ({ open, onClose, election, onUpdated }) => {
 
     setEndTime(election.endTime?.slice(0, 16) || "");
   }, [election]);
+
+  if (!open) {
+    return null;
+  }
 
   const updateCandidate = (index, value) => {
     const updated = [...candidates];
@@ -113,8 +113,8 @@ const EditElectionModal = ({ open, onClose, election, onUpdated }) => {
         title,
         description,
         candidates,
-        startTime,
-        endTime,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
       });
 
       onUpdated();

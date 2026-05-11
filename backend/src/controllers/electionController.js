@@ -114,6 +114,27 @@ export const getAllElections = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
+    const now = new Date();
+
+    // runtime lifecycle sync
+    for (const election of elections) {
+      let currentStatus = election.status;
+
+      if (now < election.startTime) {
+        currentStatus = "upcoming";
+      } else if (now >= election.startTime && now <= election.endTime) {
+        currentStatus = "active";
+      } else {
+        currentStatus = "ended";
+      }
+
+      if (currentStatus !== election.status) {
+        election.status = currentStatus;
+
+        await election.save();
+      }
+    }
+
     const total = await Election.countDocuments();
 
     return res.status(200).json({
@@ -465,6 +486,161 @@ export const removeCandidate = async (req, res) => {
     });
   } catch (error) {
     console.error("REMOVE CANDIDATE ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getElectionResults = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const election = await Election.findById(id);
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found",
+      });
+    }
+
+    // results only after ending
+    const now = new Date();
+
+    const hasEnded = now > election.endTime;
+
+    if (!hasEnded) {
+      return res.status(400).json({
+        success: false,
+        message: "Election results are not available yet",
+      });
+    }
+
+    // fetch verified votes only
+    const votes = await Vote.find({
+      electionId: id,
+      status: "verified",
+    });
+
+    const totalVotes = votes.length;
+
+    // initialize counts
+    const counts = {};
+
+    election.candidates.forEach((candidate) => {
+      counts[candidate] = 0;
+    });
+
+    // aggregate
+    votes.forEach((vote) => {
+      if (counts[vote.candidate] !== undefined) {
+        counts[vote.candidate] += 1;
+      }
+    });
+
+    // result array
+    const results = Object.entries(counts).map(([candidate, votes]) => ({
+      candidate,
+
+      votes,
+
+      percentage:
+        totalVotes > 0 ? Number(((votes / totalVotes) * 100).toFixed(2)) : 0,
+    }));
+
+    // determine winner
+    const winner = results.reduce(
+      (highest, current) => (current.votes > highest.votes ? current : highest),
+
+      results[0],
+    );
+
+    return res.status(200).json({
+      success: true,
+
+      data: {
+        electionId: election._id,
+
+        title: election.title,
+
+        status: "ended",
+
+        totalVotes,
+
+        winner: winner?.candidate || null,
+
+        results,
+      },
+    });
+  } catch (error) {
+    console.error("GET RESULTS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getActiveElection = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const election = await Election.findOne({
+      startTime: {
+        $lte: now,
+      },
+
+      endTime: {
+        $gte: now,
+      },
+    }).sort({
+      createdAt: -1,
+    });
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "No active election found",
+      });
+    }
+
+    // lifecycle sync
+    if (election.status !== "active") {
+      election.status = "active";
+
+      await election.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: election,
+    });
+  } catch (error) {
+    console.error("GET ACTIVE ELECTION ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getPublicElections = async (req, res) => {
+  try {
+    const elections = await Election.find().sort({
+      createdAt: -1,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: elections,
+    });
+  } catch (error) {
+    console.error("GET PUBLIC ELECTIONS ERROR:", error);
 
     return res.status(500).json({
       success: false,

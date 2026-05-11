@@ -45,7 +45,7 @@ const Signup = () => {
 
       showToast("Account created!", "success");
       setTimeout(() => {
-        navigate("/vote-page");
+        navigate("/elections");
       }, 1200);
     } catch (error) {
       showToast(error.response?.data?.message || "Signup failed", "error");

@@ -1,17 +1,13 @@
 import React from "react";
 import { Navigate } from "react-router";
 
-import { useAuthStore } from "../store/useAuthStore";
-
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, role } = useAuthStore();
+  const token = localStorage.getItem("token");
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const role = localStorage.getItem("role");
 
-  if (role !== "admin") {
-    return <Navigate to="/" replace />;
+  if (!token || role !== "admin") {
+    return <Navigate to="/admin/login" replace />;
   }
 
   return children;

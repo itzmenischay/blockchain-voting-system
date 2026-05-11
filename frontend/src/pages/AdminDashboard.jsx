@@ -3,7 +3,7 @@ import {
   getAllElections,
   deleteElection,
 } from "../services/adminElectionService";
-
+import { Link } from "react-router";
 import CreateElectionModal from "../components/admin/CreateElectionModal";
 import EditElectionModal from "../components/admin/EditElectionModal";
 
@@ -41,6 +41,12 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchElections();
+
+    const interval = setInterval(() => {
+      fetchElections();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [page]);
 
   // Edit election
@@ -155,6 +161,13 @@ const AdminDashboard = () => {
                     >
                       Delete
                     </button>
+
+                    <Link
+                      to={`/admin/results/${election._id}`}
+                      className="px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-300"
+                    >
+                      Results
+                    </Link>
                   </div>
                 </div>
               </div>
