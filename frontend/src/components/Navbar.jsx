@@ -25,20 +25,36 @@ const Navbar = () => {
 
   const role = localStorage.getItem("role");
 
-  const navItems = [
-    {
-      name: "Home",
-      path: "/",
-    },
-    {
-      name: "Elections",
-      path: "/elections",
-    },
-    {
-      name: "Batches",
-      path: "/batches",
-    },
-  ];
+  const navItems =
+    role === "admin"
+      ? [
+          {
+            name: "Home",
+            path: "/",
+          },
+          {
+            name: "Dashboard",
+            path: "/admin",
+          },
+          {
+            name: "Batches",
+            path: "/batches",
+          },
+        ]
+      : [
+          {
+            name: "Home",
+            path: "/",
+          },
+          {
+            name: "Elections",
+            path: "/elections",
+          },
+          {
+            name: "Batches",
+            path: "/batches",
+          },
+        ];
 
   const handleLogout = () => {
     const currentRole = localStorage.getItem("role");

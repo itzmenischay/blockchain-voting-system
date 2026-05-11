@@ -74,9 +74,9 @@ const CreateElectionModal = ({ open, onClose, onCreated }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
-      <div className="w-full max-w-2xl rounded-[32px] border border-white/10 bg-[#0d1117]/95 backdrop-blur-2xl p-8">
-        <div className="flex justify-between items-center mb-8">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-md pt-24 pb-6 px-4 overflow-hidden">
+      <div className="w-full max-w-2xl max-h-[calc(100vh-7rem)] rounded-[32px] border border-white/10 bg-[#0d1117]/95 backdrop-blur-2xl flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center p-8 pb-6 border-b border-white/10 shrink-0">
           <h2 className="text-2xl font-bold">Create Election</h2>
 
           <button
@@ -87,7 +87,10 @@ const CreateElectionModal = ({ open, onClose, onCreated }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto px-8 py-6 space-y-5 scrollbar-thin scrollbar-thumb-white/10"
+        >
           <input
             type="text"
             placeholder="Election title"
@@ -155,7 +158,8 @@ const CreateElectionModal = ({ open, onClose, onCreated }) => {
               className="px-5 py-4 rounded-2xl bg-white/5 border border-white/10 outline-none"
             />
           </div>
-
+        </form>
+        <div className="sticky bottom-0 bg-[#0d1117]/95 pt-4 border-t border-white/10">
           <button
             type="submit"
             disabled={loading}
@@ -163,7 +167,7 @@ const CreateElectionModal = ({ open, onClose, onCreated }) => {
           >
             {loading ? "Creating..." : "Create Election"}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );

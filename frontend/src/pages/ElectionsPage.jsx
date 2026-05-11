@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-
 import { Link } from "react-router";
-
 import { getAllPublicElections } from "../services/electionService";
+import { formatToIST } from "../utils/dateTime";
 
 const ElectionsPage = () => {
   const [elections, setElections] = useState([]);
@@ -23,6 +22,12 @@ const ElectionsPage = () => {
     };
 
     fetchElections();
+
+    const interval = setInterval(() => {
+      fetchElections();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const getStatusStyle = (status) => {
@@ -86,11 +91,11 @@ const ElectionsPage = () => {
               </p>
 
               <p className="text-slate-500 text-sm mt-4">
-                Starts: {new Date(election.startTime).toLocaleString()}
+                Starts: {formatToIST(election.startTime)}
               </p>
 
               <p className="text-slate-500 text-sm">
-                Ends: {new Date(election.endTime).toLocaleString()}
+                Ends: {formatToIST(election.endTime)}
               </p>
 
               <div className="mt-6">

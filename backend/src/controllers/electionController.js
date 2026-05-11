@@ -507,7 +507,7 @@ export const getElectionResults = async (req, res) => {
       });
     }
 
-    // results only after ending
+    // results only after election ends
     const now = new Date();
 
     const hasEnded = now > election.endTime;
@@ -519,22 +519,23 @@ export const getElectionResults = async (req, res) => {
       });
     }
 
-    // fetch verified votes only
+    // fetch finalized votes
     const votes = await Vote.find({
       electionId: id,
-      status: "verified",
+
+      status: "batched",
     });
 
     const totalVotes = votes.length;
 
-    // initialize counts
+    // initialize candidate counts
     const counts = {};
 
     election.candidates.forEach((candidate) => {
       counts[candidate] = 0;
     });
 
-    // aggregate
+    // aggregate votes
     votes.forEach((vote) => {
       if (counts[vote.candidate] !== undefined) {
         counts[vote.candidate] += 1;
@@ -552,11 +553,16 @@ export const getElectionResults = async (req, res) => {
     }));
 
     // determine winner
-    const winner = results.reduce(
-      (highest, current) => (current.votes > highest.votes ? current : highest),
+    let winner = null;
 
-      results[0],
-    );
+    if (totalVotes > 0) {
+      winner = results.reduce(
+        (highest, current) =>
+          current.votes > highest.votes ? current : highest,
+
+        results[0],
+      );
+    }
 
     return res.status(200).json({
       success: true,
@@ -570,7 +576,7 @@ export const getElectionResults = async (req, res) => {
 
         totalVotes,
 
-        winner: winner?.candidate || null,
+        winner: winner ? winner.candidate : null,
 
         results,
       },

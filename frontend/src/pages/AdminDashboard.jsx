@@ -6,6 +6,7 @@ import {
 import { Link } from "react-router";
 import CreateElectionModal from "../components/admin/CreateElectionModal";
 import EditElectionModal from "../components/admin/EditElectionModal";
+import { formatToIST } from "../utils/dateTime";
 
 const AdminDashboard = () => {
   const [elections, setElections] = useState([]);
@@ -23,19 +24,53 @@ const AdminDashboard = () => {
   const limit = 10;
 
   // Fetch elections
-  const fetchElections = async () => {
+  const fetchElections = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
 
       const res = await getAllElections(page, limit);
 
-      setElections(res.data || []);
+      setElections((prev) => {
+        const prevMap = new Map(
+          prev.map((election) => [election._id, election]),
+        );
+
+        return (res.data || []).map((election) => {
+          const oldElection = prevMap.get(election._id);
+
+          // preserve reference
+          // if nothing changed
+          if (
+            oldElection &&
+            JSON.stringify(oldElection) === JSON.stringify(election)
+          ) {
+            return oldElection;
+          }
+
+          return election;
+        });
+      });
 
       setPagination(res.pagination || null);
+
+      // sync modal election
+      if (selectedElection) {
+        const updatedElection = (res.data || []).find(
+          (election) => election._id === selectedElection._id,
+        );
+
+        if (updatedElection) {
+          setSelectedElection(updatedElection);
+        }
+      }
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -43,7 +78,7 @@ const AdminDashboard = () => {
     fetchElections();
 
     const interval = setInterval(() => {
-      fetchElections();
+      fetchElections(true);
     }, 10000);
 
     return () => clearInterval(interval);
@@ -137,11 +172,11 @@ const AdminDashboard = () => {
                     </p>
 
                     <p className="text-slate-500 mt-3 text-sm">
-                      Starts: {new Date(election.startTime).toLocaleString()}
+                      Starts: {formatToIST(election.startTime)}
                     </p>
 
                     <p className="text-slate-500 text-sm">
-                      Ends: {new Date(election.endTime).toLocaleString()}
+                      Ends: {formatToIST(election.endTime)}
                     </p>
                   </div>
 
