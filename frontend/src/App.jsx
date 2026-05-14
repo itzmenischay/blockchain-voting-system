@@ -6,21 +6,24 @@ import {
   createRoutesFromElements,
 } from "react-router";
 
+
 // Page imports
 import Home from "./pages/Home";
 import ElectionsPage from "./pages/ElectionsPage";
 import VotePage from "./pages/VotePage";
-import Layout from "./components/Layout";
 import BatchPage from "./pages/BatchPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AdminSignup from "./pages/AdminSignup";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
 import ResultsPage from "./pages/ResultsPage";
 import AdminResults from "./pages/AdminResults";
+
+// Component imports
+import Layout from "./components/Layout";
+import AdminRoute from "./components/AdminRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const router = createBrowserRouter([
   {

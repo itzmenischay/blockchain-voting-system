@@ -1,24 +1,43 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Toast from "../components/Toast";
 import { useNavigate, Link } from "react-router";
 import { loginUser } from "../services/authService";
 import { useAuthStore } from "../store/useAuthStore";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
 
   const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+
   const [toastConfig, setToastConfig] = useState(null);
+
   const showToast = (message, type = "info") => {
     setToastConfig({ message, type });
   };
+
+  // SHOW TOAST IF USER CLICKS ELECTIONS
+  // WHILE ALREADY ON LOGIN PAGE
+  useEffect(() => {
+    const handleLoginToast = (e) => {
+      showToast(e.detail.message, e.detail.type);
+    };
+
+    window.addEventListener("show-login-toast", handleLoginToast);
+
+    return () => {
+      window.removeEventListener("show-login-toast", handleLoginToast);
+    };
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -32,6 +51,7 @@ const Login = () => {
 
     try {
       setLoading(true);
+
       const res = await loginUser(formData);
 
       login({
@@ -41,6 +61,7 @@ const Login = () => {
       });
 
       showToast("Login successful!", "success");
+
       setTimeout(() => {
         navigate("/elections");
       }, 1200);
@@ -63,21 +84,36 @@ const Login = () => {
           />
         )}
       </AnimatePresence>
+
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        initial={{
+          opacity: 0,
+          y: 20,
+          scale: 0.9,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          scale: 1,
+        }}
+        transition={{
+          duration: 0.5,
+          ease: "easeOut",
+        }}
         className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8"
       >
         <h1 className="text-4xl font-bold text-center text-white mb-2">
           Welcome Back
         </h1>
+
         <p className="text-slate-400 text-center mb-8">
           Login to continue voting securely
         </p>
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+
             <input
               type="email"
               name="email"
@@ -90,14 +126,27 @@ const Login = () => {
 
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full pl-12 pr-4 py-4 rounded-xl bg-black/30 border border-white/10 outline-none text-white"
+              className="w-full pl-12 pr-14 py-4 rounded-xl bg-black/30 border border-white/10 outline-none text-white"
             />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition"
+            >
+              {showPassword ? (
+                <Eye className="w-5 h-5" />
+              ) : (
+                <EyeOff className="w-5 h-5" />
+              )}
+            </button>
           </div>
 
           <motion.button

@@ -123,7 +123,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen px-6 py-12 max-w-7xl mx-auto">
+    <div className="min-h-screen flex flex-col px-6 py-12 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-10">
         <div>
           <h1 className="text-4xl font-bold">Admin Dashboard</h1>
@@ -139,14 +139,15 @@ const AdminDashboard = () => {
         </button>
       </div>
 
-      {loading ? (
-        <p className="text-slate-400">Loading elections...</p>
-      ) : elections.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-          No elections found
-        </div>
-      ) : (
-        <>
+      {/* Main Content */}
+      <div className="flex-1">
+        {loading ? (
+          <p className="text-slate-400">Loading elections...</p>
+        ) : elections.length === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
+            No elections found
+          </div>
+        ) : (
           <div className="space-y-5">
             {elections.map((election) => (
               <div
@@ -208,31 +209,31 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
+        )}
+      </div>
 
-          {/* Pagination */}
-          <div className="flex justify-center gap-4 mt-12">
-            <button
-              disabled={!pagination?.hasPrevPage}
-              onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
-            >
-              Previous
-            </button>
+      {/* Pagination */}
+      <div className="flex justify-center gap-4 mt-12 pt-8">
+        <button
+          disabled={!pagination?.hasPrevPage}
+          onClick={() => setPage((p) => p - 1)}
+          className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
+        >
+          Previous
+        </button>
 
-            <span className="text-slate-400 flex items-center">
-              Page {pagination?.page || 1}
-            </span>
+        <span className="text-slate-400 flex items-center">
+          Page {pagination?.page || 1}
+        </span>
 
-            <button
-              disabled={!pagination?.hasNextPage}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
+        <button
+          disabled={!pagination?.hasNextPage}
+          onClick={() => setPage((p) => p + 1)}
+          className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
 
       <CreateElectionModal
         open={openCreateModal}

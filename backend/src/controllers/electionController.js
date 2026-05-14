@@ -522,7 +522,6 @@ export const getElectionResults = async (req, res) => {
     // fetch finalized votes
     const votes = await Vote.find({
       electionId: id,
-
       status: "batched",
     });
 
@@ -545,23 +544,30 @@ export const getElectionResults = async (req, res) => {
     // result array
     const results = Object.entries(counts).map(([candidate, votes]) => ({
       candidate,
-
       votes,
-
       percentage:
         totalVotes > 0 ? Number(((votes / totalVotes) * 100).toFixed(2)) : 0,
     }));
 
     // determine winner
     let winner = null;
+    let isTie = false;
 
     if (totalVotes > 0) {
-      winner = results.reduce(
-        (highest, current) =>
-          current.votes > highest.votes ? current : highest,
-
-        results[0],
+      const highestVoteCount = Math.max(
+        ...results.map((result) => result.votes),
       );
+
+      const topCandidates = results.filter(
+        (result) => result.votes === highestVoteCount,
+      );
+
+      // clear winner only if exactly one top candidate
+      if (topCandidates.length === 1) {
+        winner = topCandidates[0];
+      } else {
+        isTie = true;
+      }
     }
 
     return res.status(200).json({
@@ -577,6 +583,8 @@ export const getElectionResults = async (req, res) => {
         totalVotes,
 
         winner: winner ? winner.candidate : null,
+
+        isTie,
 
         results,
       },

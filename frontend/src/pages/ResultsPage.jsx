@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 
 import { getElectionResults } from "../services/resultService";
+import { ArrowLeft } from "lucide-react";
 
 const ResultsPage = () => {
   const { electionId } = useParams();
+  const navigate = useNavigate();
 
   const [result, setResult] = useState(null);
 
@@ -47,6 +49,13 @@ const ResultsPage = () => {
 
   return (
     <div className="min-h-screen px-6 py-14 max-w-5xl mx-auto">
+      <button
+        onClick={() => navigate("/elections")}
+        className="flex items-center gap-2 text-slate-400 hover:text-white transition mb-10"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        Back to Elections
+      </button>
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-bold">{result.title}</h1>
 

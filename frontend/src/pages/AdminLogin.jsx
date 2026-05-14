@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from "react";
-
 import { useNavigate, Link } from "react-router";
+import { Eye, EyeOff } from "lucide-react";
 
 import { adminLogin } from "../services/adminAuthService";
+import { useAuthStore } from "../store/useAuthStore";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
 
+  const login = useAuthStore((state) => state.login);
+
   const [loading, setLoading] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -37,11 +42,11 @@ const AdminLogin = () => {
 
       const res = await adminLogin(formData);
 
-      localStorage.setItem("token", res.data.token);
-
-      localStorage.setItem("role", res.data.role);
-
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      login({
+        token: res.data.token,
+        user: res.data.user,
+        role: res.data.role,
+      });
 
       navigate("/admin");
     } catch (error) {
@@ -66,17 +71,32 @@ const AdminLogin = () => {
             placeholder="Email"
             onChange={handleChange}
             required
-            className="w-full p-4 rounded-2xl bg-white/5 border border-white/10"
+            className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 outline-none"
           />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            onChange={handleChange}
-            required
-            className="w-full p-4 rounded-2xl bg-white/5 border border-white/10"
-          />
+          {/* Password Input */}
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              onChange={handleChange}
+              required
+              className="w-full p-4 pr-14 rounded-2xl bg-white/5 border border-white/10 outline-none"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
+            >
+              {showPassword ? (
+                <Eye className="w-5 h-5" />
+              ) : (
+                <EyeOff className="w-5 h-5" />
+              )}
+            </button>
+          </div>
 
           <button
             disabled={loading}
@@ -88,7 +108,7 @@ const AdminLogin = () => {
 
         <p className="text-center text-slate-400 mt-6">
           Need admin access?{" "}
-          <Link to="/admin/signup" className="text-white">
+          <Link to="/admin/signup" className="text-white hover:underline">
             Signup
           </Link>
         </p>

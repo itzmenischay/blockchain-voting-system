@@ -1,228 +1,398 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Wallet, Lock, LogOut, X } from "lucide-react";
+import { useAuthStore } from "../store/useAuthStore";
+import {
+  Mail,
+  Wallet,
+  Lock,
+  LogOut,
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  Check,
+  ShieldCheck,
+  Loader2,
+} from "lucide-react";
 
-const UserModal = ({ open, onClose, user, logout }) => {
+import Toast from "./Toast";
+import { changePassword } from "../services/authService";
+
+const UserModal = ({ open, onClose, logout, anchorRef }) => {
+  const authUser = useAuthStore((state) => state.user);
+  const modalRef = useRef(null);
+
+  const [view, setView] = useState("profile");
+
+  const [loading, setLoading] = useState(false);
+
+  const [showCurrent, setShowCurrent] = useState(false);
+
+  const [showNew, setShowNew] = useState(false);
+
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
+
+  const role = localStorage.getItem("role");
+
+  const user = authUser
+    ? {
+        ...authUser,
+        role: role === "admin" ? "Admin" : "User",
+      }
+    : null;
+
+  const [form, setForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [toast, setToast] = useState(null);
+
+  // reset modal state
+  useEffect(() => {
+    if (!open) {
+      setTimeout(() => {
+        setView("profile");
+
+        setForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+
+        setShowCurrent(false);
+        setShowNew(false);
+        setShowConfirm(false);
+        setStayLoggedIn(false);
+      }, 200);
+    }
+  }, [open]);
+
+  // ESC handling
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== "Escape") return;
+
+      if (view === "password") {
+        setView("profile");
+        return;
+      }
+
+      onClose();
+    };
+
+    if (open) {
+      document.addEventListener("keydown", handleEsc);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [open, view, onClose]);
+
+  // outside click close
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(e.target) &&
+        anchorRef?.current &&
+        !anchorRef.current.contains(e.target)
+      ) {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open, onClose, anchorRef]);
+
+  const showToast = (message, type) => {
+    setToast({
+      message,
+      type,
+    });
+  };
+
   const handleLogout = () => {
     logout();
     onClose();
   };
 
+  const handlePasswordChange = async () => {
+    const { currentPassword, newPassword, confirmPassword } = form;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      showToast("Please fill all fields", "error");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showToast("Passwords do not match", "error");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const role = localStorage.getItem("role");
+
+      const res = await changePassword({
+        currentPassword,
+        newPassword,
+        role,
+      });
+
+      showToast(res.message, "success");
+
+      if (!stayLoggedIn) {
+        setTimeout(() => {
+          handleLogout();
+        }, 1200);
+
+        return;
+      }
+
+      setForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      setView("profile");
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || "Password update failed",
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-50"
+    <>
+      <AnimatePresence>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
           />
+        )}
+      </AnimatePresence>
 
-          {/* Modal */}
+      <AnimatePresence>
+        {open && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.97, y: -16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: -16 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed top-88 left-256 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92%] max-w-sm"
-            style={{
-              background:
-                "linear-gradient(145deg, rgba(18,18,22,0.98) 0%, rgba(10,10,14,0.99) 100%)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: "28px",
-              boxShadow:
-                "0 0 0 1px rgba(255,255,255,0.03), 0 32px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)",
+            ref={modalRef}
+            initial={{
+              opacity: 0,
+              y: -10,
+              scale: 0.98,
             }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+            }}
+            exit={{
+              opacity: 0,
+              y: -10,
+              scale: 0.98,
+            }}
+            transition={{
+              duration: 0.22,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="fixed top-24 right-0 z-[100] w-[400px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#09090B]/95 backdrop-blur-2xl shadow-[0_30px_80px_rgba(0,0,0,0.6)]"
           >
-            {/* Inner glow top edge */}
-            <div
-              className="absolute inset-x-0 top-0 h-px rounded-full"
-              style={{
-                background:
-                  "linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.12) 50%, transparent 90%)",
+            {/* top glow */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+            <motion.div
+              animate={{
+                x: view === "profile" ? "0%" : "-50%",
               }}
-            />
-
-            <div className="p-8">
-              {/* Close button */}
-              <button
-                onClick={onClose}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  color: "rgba(255,255,255,0.4)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-                  e.currentTarget.style.color = "rgba(255,255,255,0.85)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                  e.currentTarget.style.color = "rgba(255,255,255,0.4)";
-                }}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Profile section */}
-              <div className="flex flex-col items-center pt-2 pb-6">
-                {/* Avatar */}
-                <div className="relative mb-5">
-                  <div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background:
-                        "conic-gradient(from 180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.03), rgba(255,255,255,0.15))",
-                      padding: "1.5px",
-                      borderRadius: "50%",
-                    }}
-                  />
-
-                  <div
-                    className="w-20 h-20 rounded-full overflow-hidden relative"
-                    style={{
-                      border: "2px solid rgba(255,255,255,0.08)",
-                      boxShadow:
-                        "0 0 0 4px rgba(255,255,255,0.03), 0 8px 24px rgba(0,0,0,0.4)",
-                    }}
-                  >
+              transition={{
+                duration: 0.32,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="flex w-[200%]"
+            >
+              {/* PROFILE */}
+              <div className="w-1/2 p-6">
+                <div className="flex flex-col items-center pb-5">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/[0.03]">
                     {user?.profilePic ? (
                       <img
                         src={user.profilePic}
                         alt="profile"
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center"
-                        style={{
-                          background: "rgba(255,255,255,0.04)",
-                        }}
-                      >
-                        <span
-                          className="text-2xl font-semibold"
-                          style={{
-                            color: "rgba(255,255,255,0.7)",
-                            fontFamily: "'Georgia', serif",
-                          }}
-                        >
-                          {user?.name?.[0]}
-                        </span>
-                      </div>
+                      <ShieldCheck className="h-8 w-8 text-slate-300" />
                     )}
                   </div>
+
+                  <h2 className="text-lg font-semibold text-white">
+                    {user?.name || "User"}
+                  </h2>
+
+                  <span className="mt-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-400">
+                    {user?.role || "User"}
+                  </span>
                 </div>
 
-                <h2
-                  className="text-xl font-semibold tracking-tight"
-                  style={{
-                    color: "rgba(255,255,255,0.92)",
-                  }}
+                <div className="mb-5 space-y-2.5">
+                  <InfoRow
+                    icon={<Mail className="h-4 w-4" />}
+                    label="Email"
+                    value={user?.email || "No email found"}
+                  />
+
+                  <InfoRow
+                    icon={<Wallet className="h-4 w-4" />}
+                    label="Wallet"
+                    value={user?.walletAddress || "Not connected"}
+                    mono
+                  />
+                </div>
+
+                <div className="space-y-2.5">
+                  <ActionButton
+                    icon={<Lock className="h-4 w-4" />}
+                    label="Change Password"
+                    onClick={() => setView("password")}
+                  />
+
+                  <ActionButton
+                    icon={<LogOut className="h-4 w-4" />}
+                    label="Log Out"
+                    variant="danger"
+                    onClick={handleLogout}
+                  />
+                </div>
+              </div>
+
+              {/* PASSWORD */}
+              <div className="w-1/2 p-6">
+                <button
+                  onClick={() => setView("profile")}
+                  className="mb-5 flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
                 >
-                  {user?.name}
-                </h2>
+                  <ChevronLeft className="h-4 w-4" />
+                  Back
+                </button>
 
-                <span
-                  className="mt-1.5 text-xs px-3 py-1 rounded-full"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.4)",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    fontSize: "10px",
-                  }}
-                >
-                  {user?.role || "User"}
-                </span>
+                <h3 className="mb-5 text-lg font-semibold text-white">
+                  Change Password
+                </h3>
+
+                <div className="space-y-4">
+                  <PasswordInput
+                    label="Current Password"
+                    type={showCurrent ? "text" : "password"}
+                    value={form.currentPassword}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        currentPassword: e.target.value,
+                      }))
+                    }
+                    show={showCurrent}
+                    toggle={() => setShowCurrent(!showCurrent)}
+                  />
+
+                  <PasswordInput
+                    label="New Password"
+                    type={showNew ? "text" : "password"}
+                    value={form.newPassword}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        newPassword: e.target.value,
+                      }))
+                    }
+                    show={showNew}
+                    toggle={() => setShowNew(!showNew)}
+                  />
+
+                  <PasswordInput
+                    label="Confirm Password"
+                    type={showConfirm ? "text" : "password"}
+                    value={form.confirmPassword}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        confirmPassword: e.target.value,
+                      }))
+                    }
+                    show={showConfirm}
+                    toggle={() => setShowConfirm(!showConfirm)}
+                  />
+
+                  {/* toggle */}
+                  <button
+                    onClick={() => setStayLoggedIn(!stayLoggedIn)}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] px-4 py-3 transition hover:bg-white/[0.05]"
+                  >
+                    <div
+                      className={`flex h-5 w-5 items-center justify-center rounded-md border transition ${
+                        stayLoggedIn
+                          ? "border-purple-500 bg-purple-500"
+                          : "border-white/15"
+                      }`}
+                    >
+                      {stayLoggedIn && <Check className="h-3 w-3 text-white" />}
+                    </div>
+
+                    <span className="text-sm text-slate-300">
+                      Stay logged in after password change
+                    </span>
+                  </button>
+
+                  <button
+                    disabled={loading}
+                    onClick={handlePasswordChange}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3 font-medium text-slate-950 transition hover:bg-slate-200 disabled:opacity-60"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : null}
+
+                    {loading ? "Updating..." : "Update Password"}
+                  </button>
+                </div>
               </div>
-
-              {/* Divider */}
-              <div
-                className="mb-5"
-                style={{
-                  height: "1px",
-                  background:
-                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)",
-                }}
-              />
-
-              {/* Details */}
-              <div className="space-y-2.5 mb-6">
-                <InfoRow
-                  icon={<Mail className="w-4 h-4" />}
-                  label="Email"
-                  value={user?.email}
-                />
-
-                <InfoRow
-                  icon={<Wallet className="w-4 h-4" />}
-                  label="Wallet"
-                  value={user?.walletAddress || "Not connected"}
-                  mono
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-col gap-2.5">
-                <ActionButton
-                  icon={<Lock className="w-3.5 h-3.5" />}
-                  label="Change Password"
-                />
-
-                <ActionButton
-                  icon={<LogOut className="w-3.5 h-3.5" />}
-                  label="Log Out"
-                  onClick={handleLogout}
-                  variant="danger"
-                />
-              </div>
-            </div>
+            </motion.div>
           </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
 const InfoRow = ({ icon, label, value, mono = false }) => (
-  <div
-    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl"
-    style={{
-      background: "rgba(255,255,255,0.03)",
-      border: "1px solid rgba(255,255,255,0.05)",
-    }}
-  >
-    <span
-      style={{
-        color: "rgba(255,255,255,0.25)",
-      }}
-    >
-      {icon}
-    </span>
+  <div className="flex items-center gap-3 rounded-2xl border border-white/[0.05] bg-white/[0.03] px-4 py-3">
+    <span className="text-white/25">{icon}</span>
 
     <div className="min-w-0">
-      <p
-        className="text-xs mb-0.5"
-        style={{
-          color: "rgba(255,255,255,0.28)",
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          fontSize: "10px",
-        }}
-      >
+      <p className="mb-0.5 text-[10px] uppercase tracking-[0.06em] text-white/30">
         {label}
       </p>
 
       <p
-        className="text-sm truncate"
-        style={{
-          color: "rgba(255,255,255,0.75)",
-          fontFamily: mono ? "'SF Mono', 'Fira Code', monospace" : "inherit",
-          fontSize: mono ? "12px" : "13px",
-        }}
+        className={`truncate text-sm text-white/75 ${
+          mono ? "font-mono text-xs" : ""
+        }`}
       >
         {value}
       </p>
@@ -230,39 +400,42 @@ const InfoRow = ({ icon, label, value, mono = false }) => (
   </div>
 );
 
+const PasswordInput = ({ label, type, value, onChange, show, toggle }) => (
+  <div>
+    <label className="mb-2 block text-xs uppercase tracking-[0.06em] text-slate-500">
+      {label}
+    </label>
+
+    <div className="flex items-center rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4">
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-500"
+      />
+
+      <button
+        type="button"
+        onClick={toggle}
+        className="text-slate-500 transition hover:text-white"
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  </div>
+);
+
 const ActionButton = ({ icon, label, onClick, variant = "default" }) => {
   const isDanger = variant === "danger";
-
-  const base = {
-    background: isDanger ? "rgba(239,68,68,0.07)" : "rgba(255,255,255,0.05)",
-
-    border: isDanger
-      ? "1px solid rgba(239,68,68,0.15)"
-      : "1px solid rgba(255,255,255,0.07)",
-
-    color: isDanger ? "rgba(252,165,165,0.85)" : "rgba(255,255,255,0.55)",
-  };
-
-  const hover = {
-    background: isDanger ? "rgba(239,68,68,0.14)" : "rgba(255,255,255,0.09)",
-
-    color: isDanger ? "rgba(252,165,165,1)" : "rgba(255,255,255,0.85)",
-  };
 
   return (
     <button
       onClick={onClick}
-      className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all"
-      style={{
-        ...base,
-        letterSpacing: "0.01em",
-      }}
-      onMouseEnter={(e) => {
-        Object.assign(e.currentTarget.style, hover);
-      }}
-      onMouseLeave={(e) => {
-        Object.assign(e.currentTarget.style, base);
-      }}
+      className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-medium transition ${
+        isDanger
+          ? "border-red-500/10 bg-red-500/[0.06] text-red-300 hover:bg-red-500/[0.12]"
+          : "border-white/[0.07] bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white"
+      }`}
     >
       {icon}
       {label}

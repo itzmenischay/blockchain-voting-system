@@ -1,20 +1,14 @@
-import React, { useState } from "react";
-
+import React, { useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-
-import { motion } from "framer-motion";
-
 import { ShieldCheck, User } from "lucide-react";
 
 import { useAuthStore } from "../store/useAuthStore";
-
 import { useVoteStore } from "../store/useVoteStore";
 
 import UserModal from "./UserModal";
 
 const Navbar = () => {
   const navigate = useNavigate();
-
   const location = useLocation();
 
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -22,6 +16,8 @@ const Navbar = () => {
   const { setWallet, setVoteState, setVoteHashOnly } = useVoteStore();
 
   const [openProfile, setOpenProfile] = useState(false);
+
+  const profileButtonRef = useRef(null);
 
   const role = localStorage.getItem("role");
 
@@ -63,15 +59,11 @@ const Navbar = () => {
 
     // reset vote store
     setWallet(null);
-
     setVoteState("idle");
-
     setVoteHashOnly("");
 
     localStorage.removeItem("token");
-
     localStorage.removeItem("role");
-
     localStorage.removeItem("user");
 
     navigate(currentRole === "admin" ? "/admin/login" : "/login");
@@ -90,7 +82,7 @@ const Navbar = () => {
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
 
-            <span className="font-semibold text-white">VoteChain</span>
+            <span className="font-semibold text-white">NexusVote</span>
           </div>
 
           {/* NAV LINKS */}
@@ -101,7 +93,27 @@ const Navbar = () => {
               return (
                 <button
                   key={item.name}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    if (item.path === "/elections" && !isAuthenticated) {
+                      if (location.pathname === "/login") {
+                        window.dispatchEvent(
+                          new CustomEvent("show-login-toast", {
+                            detail: {
+                              message: "Please login first",
+                              type: "error",
+                            },
+                          }),
+                        );
+
+                        return;
+                      }
+
+                      navigate("/login");
+                      return;
+                    }
+
+                    navigate(item.path);
+                  }}
                   className={`text-sm font-medium transition ${
                     isActive ? "text-white" : "text-slate-500 hover:text-white"
                   }`}
@@ -110,8 +122,6 @@ const Navbar = () => {
                 </button>
               );
             })}
-
-            {/* AUTH SECTION */}
 
             {/* AUTH SECTION */}
             {!isAuthenticated && role !== "admin" ? (
@@ -133,7 +143,8 @@ const Navbar = () => {
             ) : (
               <>
                 <button
-                  onClick={() => setOpenProfile(true)}
+                  ref={profileButtonRef}
+                  onClick={() => setOpenProfile((prev) => !prev)}
                   className="w-11 h-11 rounded-full overflow-hidden border border-white/10 hover:border-white/20 transition"
                 >
                   {user?.profilePic ? (
@@ -151,11 +162,8 @@ const Navbar = () => {
 
                 <UserModal
                   open={openProfile}
+                  anchorRef={profileButtonRef}
                   onClose={() => setOpenProfile(false)}
-                  user={{
-                    ...user,
-                    role: role === "admin" ? "Admin" : "User",
-                  }}
                   logout={handleLogout}
                 />
               </>

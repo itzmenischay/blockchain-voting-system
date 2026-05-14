@@ -28,3 +28,21 @@ export const validateWallet = async (walletAddress, signature) => {
 
   return res.data;
 };
+
+export const changePassword = async ({
+  currentPassword,
+  newPassword,
+  role,
+}) => {
+  const endpoint =
+    role === "admin"
+      ? "/auth/admin/change-password"
+      : "/auth/user/change-password";
+
+  const res = await API.patch(endpoint, {
+    currentPassword,
+    newPassword,
+  });
+
+  return res.data;
+};

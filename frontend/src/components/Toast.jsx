@@ -20,7 +20,7 @@ const Toast = ({ message, type, onClose }) => {
     <motion.div
       initial={{ opacity: 0, y: -20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, sclae: 0.95 }}
+      exit={{ opacity: 0, y: -20, scale: 0.95 }}
       className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 bg-slate-900/90 backdrop:blur-xl border border-white/10 rounded-full shadow-2xl"
     >
       {icons[type] || icons.info}

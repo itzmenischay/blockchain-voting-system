@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 
 const BatchPage = () => {
   const [batches, setBatches] = useState([]);
+
   const [pagination, setPagination] = useState(null);
+
   const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(1);
@@ -27,25 +29,33 @@ const BatchPage = () => {
         setLoading(false);
       }
     };
+
     fetchBatches();
   }, [page]);
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-16 min-h-screen flex flex-col">
       <h2 className="text-4xl font-bold mb-10 text-center">Batch Explorer</h2>
 
-      {loading ? (
-        <p className="text-center text-slate-400">Loading batches...</p>
-      ) : batches.length === 0 ? (
-        <p className="text-center text-slate-400">No batches yet</p>
-      ) : (
-        <>
-          {/* Batch List */}
-          <div className="space-y-6 flex-1">
+      {/* Main Content */}
+      <div className="flex-1">
+        {loading ? (
+          <p className="text-center text-slate-400">Loading batches...</p>
+        ) : batches.length === 0 ? (
+          <p className="text-center text-slate-400">No batches yet</p>
+        ) : (
+          <div className="space-y-6">
             {batches.map((batch) => (
               <motion.div
                 key={batch.batchId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{
+                  opacity: 0,
+                  y: 20,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
                 className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl"
               >
                 <h3 className="text-xl font-semibold mb-2">{batch.batchId}</h3>
@@ -68,32 +78,33 @@ const BatchPage = () => {
               </motion.div>
             ))}
           </div>
+        )}
+      </div>
 
-          {/* Pagination */}
-          <div className="flex justify-center gap-4 mt-16 pb-10">
-            <button
-              disabled={!pagination?.hasPrevPage}
-              onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
-            >
-              Previous
-            </button>
+      {/* Pagination */}
+      <div className="flex justify-center gap-4 mt-16 pb-10 pt-8">
+        <button
+          disabled={!pagination?.hasPrevPage}
+          onClick={() => setPage((p) => p - 1)}
+          className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
+        >
+          Previous
+        </button>
 
-            <span className="text-slate-400 flex items-center">
-              Page {pagination?.page || 1}
-            </span>
+        <span className="text-slate-400 flex items-center">
+          Page {pagination?.page || 1}
+        </span>
 
-            <button
-              disabled={!pagination?.hasNextPage}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
+        <button
+          disabled={!pagination?.hasNextPage}
+          onClick={() => setPage((p) => p + 1)}
+          className="px-4 py-2 rounded-xl bg-white/10 disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };
+
 export default BatchPage;

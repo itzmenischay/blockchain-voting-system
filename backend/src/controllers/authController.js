@@ -290,6 +290,7 @@ export const loginAdmin = async (req, res) => {
   }
 };
 
+// VALIDATING USER WALLET
 export const validateWallet = async (req, res) => {
   try {
     const { walletAddress, signature } = req.body;
@@ -365,6 +366,86 @@ export const validateWallet = async (req, res) => {
     });
   } catch (error) {
     console.error("VALIDATE WALLET ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// CHANGE PASSWORD (USER and ADMIN)
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const { id, role } = req.user;
+
+    // validate fields
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required",
+      });
+    }
+
+    // choose model based on role
+    const Model = role === "admin" ? Admin : User;
+
+    // find account
+    const account = await Model.findById(id);
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: "Account not found",
+      });
+    }
+
+    // verify current password
+    const isMatch = await comparePassword(currentPassword, account.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    // prevent same password reuse
+    const isSamePassword = await comparePassword(newPassword, account.password);
+
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password cannot be same as current password",
+      });
+    }
+
+    // validate password strength
+    const passwordError = validatePassword(newPassword);
+
+    if (passwordError) {
+      return res.status(400).json({
+        success: false,
+        message: passwordError,
+      });
+    }
+
+    // hash new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // update password
+    account.password = hashedPassword;
+
+    await account.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("CHANGE PASSWORD ERROR:", error);
 
     return res.status(500).json({
       success: false,

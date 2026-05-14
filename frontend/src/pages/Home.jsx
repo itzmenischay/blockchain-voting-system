@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
   ShieldCheck,
@@ -7,9 +8,16 @@ import {
   Link as LinkIcon,
   ArrowRight,
   Image as ImageIcon,
-  ChevronRight
+  ChevronRight,
+  Wallet,
+  Shield,
+  Database,
+  KeyRound,
+  Blocks,
+  FingerprintIcon,
 } from "lucide-react";
-import { useNavigate } from "react-router";
+import HomeLoader from "../components/HomeLoader";
+import LiquidEther from "../components/LiquidEther";
 
 // --- DATA ---
 const sections = [
@@ -44,8 +52,13 @@ const IllustrationPlaceholder = ({ Icon }) => (
     <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/10 transition-colors duration-500" />
     <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 group-hover:bg-white/10 transition-colors duration-500" />
 
-    <Icon className="w-16 h-16 mb-4 opacity-50 group-hover:opacity-80 transition-opacity duration-500 group-hover:scale-110 transform" strokeWidth={1} />
-    <span className="text-sm font-medium tracking-widest uppercase opacity-70">Illustration Space</span>
+    <Icon
+      className="w-16 h-16 mb-4 opacity-50 group-hover:opacity-80 transition-opacity duration-500 group-hover:scale-110 transform"
+      strokeWidth={1}
+    />
+    <span className="text-sm font-medium tracking-widest uppercase opacity-70">
+      Illustration Space
+    </span>
     <span className="text-xs mt-2 opacity-40">Replace with your image</span>
   </div>
 );
@@ -55,19 +68,92 @@ const IllustrationPlaceholder = ({ Icon }) => (
 const Home = () => {
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(true);
+  const [showLiquidEther, setShowLiquidEther] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLiquidEther(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleEnterApp = () => {
+    const role = localStorage.getItem("role");
+
+    if (role === "admin") {
+      navigate("/admin");
+      return;
+    }
+
+    navigate("/elections");
+  };
+
+  if (loading) {
+    return <HomeLoader />;
+  }
+
   return (
     <div className="w-full">
       {/* HERO SECTION */}
-      <section className="relative min-h-[90vh] flex flex-col justify-center items-center text-center px-6">
+      <section className="relative min-h-screen overflow-hidden flex flex-col justify-center items-center text-center px-6">
+        {/* Liquid Ether Background */}
+        <div className="absolute inset-0 z-0">
+          {showLiquidEther && (
+            <LiquidEther
+              colors={["#5227FF", "#FF9FFC", "#B497CF"]}
+              mouseForce={12}
+              cursorSize={80}
+              isViscous
+              viscous={24}
+              iterationsViscous={24}
+              iterationsPoisson={24}
+              resolution={0.4}
+              isBounce={false}
+              autoDemo
+              autoSpeed={0.22}
+              autoIntensity={1.8}
+              takeoverDuration={0.2}
+              autoResumeDelay={4000}
+              autoRampDuration={0.45}
+              color0="#5227FF"
+              color1="#FF9FFC"
+              color2="#B497CF"
+            />
+          )}
+        </div>
+
+        {/* Dark Overlay */}
+        {/* <div className="absolute inset-0 z-10 bg-slate-950/65 backdrop-blur-[1px]" /> */}
         <motion.div
-          initial={{ opacity: 0, y: 0, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-5xl mx-auto flex flex-col items-center"
+          initial={{
+            opacity: 0,
+            y: 0,
+            scale: 0.9,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            scale: 1,
+          }}
+          transition={{
+            duration: 0.8,
+            ease: "easeOut",
+          }}
+          className="relative z-20 max-w-5xl mx-auto flex flex-col items-center"
         >
           <motion.div
-            initial={{ opacity: 0}}
-            animate={{ opacity: 1}}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.5 }}
             className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-purple-300 backdrop-blur-sm"
           >
@@ -83,12 +169,13 @@ const Home = () => {
           </h1>
 
           <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl leading-relaxed">
-            A framework for secure, transparent, and verifiable elections. Powered by advanced cryptography and decentralized ledgers.
+            A framework for secure, transparent, and verifiable elections.
+            Powered by advanced cryptography and decentralized ledgers.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto">
             <button
-              onClick={() => navigate("/vote-page")}
+              onClick={handleEnterApp}
               className="px-8 py-4 bg-white text-slate-950 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-slate-300 transition-colors duration-300"
             >
               Enter Voting App
@@ -103,17 +190,54 @@ const Home = () => {
       </section>
 
       {/* LOGO STRIP */}
-      <section className="py-12 border-y border-white/5 bg-white/[0.02]">
+      <section className="py-14 border-y border-white/5 bg-white/[0.02] backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-sm font-medium text-slate-500 tracking-widest uppercase mb-8">
-            Trusted by Forward-Thinking Organizations
+          <p className="text-center text-sm font-medium text-slate-500 tracking-[0.25em] uppercase mb-10">
+            Built With Modern Cryptographic Infrastructure
           </p>
-          <div className="flex justify-center flex-wrap gap-8 md:gap-16 opacity-50 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-            {logos.map((logo, i) => (
-              <span key={i} className="text-xl font-bold tracking-tight text-slate-300">
-                {logo}
+
+          <div className="flex justify-center flex-wrap lg:flex-nowrap gap-3 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+            <div className="group px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-xl flex items-center gap-2 hover:border-purple-500/20 hover:bg-purple-500/[0.04] transition-all duration-300 shrink-0">
+              <Wallet className="w-4 h-4 text-purple-400" />
+              <span className="text-sm font-medium text-slate-300 whitespace-nowrap">
+                MetaMask
               </span>
-            ))}
+            </div>
+
+            <div className="group px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-xl flex items-center gap-2 hover:border-blue-500/20 hover:bg-blue-500/[0.04] transition-all duration-300 shrink-0">
+              <FingerprintIcon className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium text-slate-300 whitespace-nowrap">
+                Merkle Proofs
+              </span>
+            </div>
+
+            <div className="group px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-xl flex items-center gap-2 hover:border-indigo-500/20 hover:bg-indigo-500/[0.04] transition-all duration-300 shrink-0">
+              <Shield className="w-4 h-4 text-indigo-400" />
+              <span className="text-sm font-medium text-slate-300 whitespace-nowrap">
+                JWT Auth
+              </span>
+            </div>
+
+            <div className="group px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-xl flex items-center gap-2 hover:border-cyan-500/20 hover:bg-cyan-500/[0.04] transition-all duration-300 shrink-0">
+              <Blocks className="w-4 h-4 text-cyan-400" />
+              <span className="text-sm font-medium text-slate-300 whitespace-nowrap">
+                Blockchain
+              </span>
+            </div>
+
+            <div className="group px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-xl flex items-center gap-2 hover:border-pink-500/20 hover:bg-pink-500/[0.04] transition-all duration-300 shrink-0">
+              <KeyRound className="w-4 h-4 text-pink-400" />
+              <span className="text-sm font-medium text-slate-300 whitespace-nowrap">
+                Crypto Signing
+              </span>
+            </div>
+
+            <div className="group px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-xl flex items-center gap-2 hover:border-emerald-500/20 hover:bg-emerald-500/[0.04] transition-all duration-300 shrink-0">
+              <Database className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm font-medium text-slate-300 whitespace-nowrap">
+                Batch Storage
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -124,9 +248,13 @@ const Home = () => {
           const isReversed = index % 2 !== 0;
 
           return (
-            <section key={index} className="flex items-center px-6 md:px-16 max-w-7xl mx-auto">
-              <div className={`flex flex-col md:flex-row gap-12 lg:gap-24 items-center w-full ${isReversed ? "md:flex-row-reverse" : ""}`}>
-                
+            <section
+              key={index}
+              className="flex items-center px-6 md:px-16 max-w-7xl mx-auto"
+            >
+              <div
+                className={`flex flex-col md:flex-row gap-12 lg:gap-24 items-center w-full ${isReversed ? "md:flex-row-reverse" : ""}`}
+              >
                 <motion.div
                   initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -146,10 +274,10 @@ const Home = () => {
                     {sec.desc}
                   </p>
 
-                  <button className="group inline-flex items-center gap-2 text-blue-400 font-medium hover:text-blue-300 transition-colors pt-4">
+                  {/* <button className="group inline-flex items-center gap-2 text-blue-400 font-medium hover:text-blue-300 transition-colors pt-4">
                     Learn how it works
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                  </button> */}
                 </motion.div>
 
                 <motion.div
@@ -169,11 +297,11 @@ const Home = () => {
 
       {/* CTA */}
       <section className="relative py-32 px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/10 pointer-events-none" />
 
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
           viewport={{ once: true }}
           className="max-w-4xl mx-auto relative z-10 bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-xl rounded-[2.5rem] p-12 md:p-20 text-center shadow-2xl"
         >
@@ -182,22 +310,18 @@ const Home = () => {
           </h2>
 
           <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
-            Join thousands of organizations conducting transparent and verifiable votes.
+            Join thousands of organizations conducting transparent and
+            verifiable votes.
           </p>
 
           <button
-            onClick={() => navigate("/vote-page")}
+            onClick={handleEnterApp}
             className="px-10 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-purple-500/25 transition-all duration-300 transform hover:-translate-y-1"
           >
-            Launch Voting Application
+            Step Into Verifiable Voting
           </button>
         </motion.div>
       </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/10 py-12 text-center text-slate-500 text-sm">
-        © {new Date().getFullYear()} Blockchain Voting Framework
-      </footer>
     </div>
   );
 };
